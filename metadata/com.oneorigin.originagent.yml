@@ -1,0 +1,32 @@
+Categories:
+  - System
+  - Utilities
+License: MIT
+AuthorName: OneOrigin
+AuthorEmail: hello@oneorigin.example
+SourceCode: https://github.com/OriginLabs1/OriginAgent
+IssueTracker: https://github.com/OriginLabs1/OriginAgent/issues
+Changelog: https://github.com/OriginLabs1/OriginAgent/blob/main/CHANGELOG.md
+Summary: Universal, sovereign, model-agnostic intelligent agent environment
+Description: |
+  Origin Agent is a native Android intelligent agent environment that works offline,
+  keeps user data local, and routes consequential actions through an inspectable
+  plan → authorization → verification → provenance pipeline. It includes deterministic
+  tools (calculator, date/time, notes, knowledge search) and optional model adapters.
+  No account, telemetry, ads or mandatory cloud are required.
+RepoType: git
+Repo: https://github.com/OriginLabs1/OriginAgent.git
+Builds:
+  - versionName: 0.0.1
+    versionCode: 1
+    commit: v0.0.1
+    gradle:
+      - app
+    subdir: app
+    output: build/outputs/apk/debug/app-debug.apk
+    scanignore:
+      - gradle/wrapper/gradle-wrapper.jar
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.0.1
+CurrentVersionCode: 1
