@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible problem
+title: "[bug]: "
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Origin Agent version
+      placeholder: "0.0.1"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: "Galaxy S9, Android 10"
+    validations:
+      required: true
+  - type: dropdown
+    id: offline
+    attributes:
+      label: Was the device offline?
+      options:
+        - "Yes"
+        - "No"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open Origin\n2. Tap ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and did not include personal data
+          required: true

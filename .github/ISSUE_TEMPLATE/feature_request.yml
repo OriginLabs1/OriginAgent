@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a capability aligned with the constitution
+title: "[feat]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed capability
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence / trade-offs
+      description: Why does this beat the simpler alternative? Include benchmarks if relevant.
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Constitution check
+      options:
+        - label: Does not require account, telemetry, ads or mandatory cloud
+          required: true
+        - label: Keeps model/runtime choices replaceable
+          required: true
