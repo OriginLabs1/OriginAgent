@@ -17,6 +17,8 @@ jobs:
   release:
     name: Build and publish GitHub Release (not Play Store)
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,20 +55,20 @@ jobs:
       - name: Prepare artifact
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk dist/origin-agent-${{ github.ref_name }}.apk
+          cp app/build/outputs/apk/release/app-release.apk dist/origin-agent-${RELEASE_TAG}.apk
           sha256sum dist/*.apk > dist/SHA256SUMS.txt
           cat dist/SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
           generate_release_notes: true
           files: |
             dist/*.apk
             dist/SHA256SUMS.txt
           body: |
-            ## Origin Agent ${{ github.event.inputs.tag || github.ref_name }}
+            ## Origin Agent ${{ env.RELEASE_TAG }}
 
             **Universal intelligence. Trustworthy execution. Human empowerment.**
 
