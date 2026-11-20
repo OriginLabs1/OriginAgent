@@ -12,7 +12,7 @@
 ## Current release
 
 - `v0.0.1` — <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.1>
-- APK SHA-256: `f2bcc7607e4859f8ab8d5ff7f7ef676be575eee01e11bc8b2fdaf972c1eb10a7`
+- APK SHA-256: `6e09a39aef75e156115ce58af15aa29a69aab8b2fccc896d890ced1818a58930`
 - Verify with `sha256sum -c SHA256SUMS.txt`.
 
 ## Where we do **not** distribute (for now)
@@ -23,7 +23,7 @@
 ## Release checklist
 
 1. Version bump in `app/build.gradle.kts` (`versionCode`, `versionName`) and `CHANGELOG.md`.
-2. `./gradlew test lint assembleDebug` green.
+2. `bash ./gradlew test lint assembleRelease` green.
 3. Compute SHA-256 of the APK and include it in the release notes.
 4. Tag `vX.Y.Z`; GitHub Actions builds and attaches the APK.
 5. Update F-Droid metadata with version, hash and commit.

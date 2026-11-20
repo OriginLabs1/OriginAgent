@@ -81,7 +81,7 @@ No records leave the device unless the user explicitly shares an export.
 ## 6. Build and distribution
 
 - Gradle wrapper + pinned plugin versions for reproducible builds.
-- CI builds, tests and attaches a debug APK to GitHub Releases on tags.
+- CI builds, tests and attaches a minified release APK to GitHub Releases on tags.
 - F-Droid metadata mirrors the build. **Google Play is deliberately excluded.**
 
 ## 7. Invariants (tests enforce these)
