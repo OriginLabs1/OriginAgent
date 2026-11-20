@@ -52,12 +52,12 @@ jobs:
       - name: Lint
         run: bash ./gradlew lint --no-daemon
 
-      - name: Build debug APK
-        run: bash ./gradlew assembleDebug --no-daemon
+      - name: Build release APK
+        run: bash ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: origin-agent-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: origin-agent-release
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error

@@ -48,12 +48,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Verify
-        run: bash ./gradlew test assembleDebug --no-daemon
+        run: bash ./gradlew test assembleRelease --no-daemon
 
       - name: Prepare artifact
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/origin-agent-${{ github.ref_name }}.apk
+          cp app/build/outputs/apk/release/app-release.apk dist/origin-agent-${{ github.ref_name }}.apk
           sha256sum dist/*.apk > dist/SHA256SUMS.txt
           cat dist/SHA256SUMS.txt
 
