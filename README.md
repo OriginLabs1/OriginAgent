@@ -36,7 +36,7 @@ offline, keeps your data on your device, and treats trust as an execution proper
 | Channel | Status |
 |---|---|
 | [GitHub Releases](https://github.com/OriginLabs1/OriginAgent/releases) | Primary APK distribution |
-| Build from source | `./gradlew assembleDebug` |
+| Build from source | `bash ./gradlew assembleDebug` |
 | F-Droid | Metadata in [`metadata/`](metadata/) — submission-ready |
 | Google Play Store | **Not distributed (by design, for now)** |
 
@@ -72,8 +72,8 @@ Requirements: JDK 21, Android SDK (platform 36, build-tools 36.0.0), CMake 3.22+
 ```bash
 git clone https://github.com/OriginLabs1/OriginAgent.git
 cd OriginAgent
-./gradlew test
-./gradlew assembleDebug
+bash ./gradlew test
+bash ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 

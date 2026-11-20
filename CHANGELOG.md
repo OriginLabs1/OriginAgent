@@ -6,6 +6,14 @@ constitution's foundational version `0.0.1` until the first usable native releas
 
 ## [Unreleased]
 
+### Changed
+- _Nothing yet._
+
+### Fixed
+- _Nothing yet._
+
+## [0.0.1] - 2026-11-20
+
 ### Added
 - Constitutional foundation (`CONSTITUTION.md`), context and implementation specs.
 - Native Android app skeleton with Material 3 Expressive theme.
@@ -18,13 +26,10 @@ constitution's foundational version `0.0.1` until the first usable native releas
 - Gradle wrapper and reproducible pinned build configuration.
 - Optional native C/C++ provenance layer with complete Kotlin fallback; local builds can
   use `-PskipNative=true` on hosts without runnable NDK binaries.
+- First installable debug APK published on GitHub Releases with `SHA256SUMS.txt`.
 
 ### Changed
-- _Nothing yet._
+- CI workflows accept Android SDK licenses before installing SDK packages.
 
 ### Fixed
-- _Nothing yet._
-
-## [0.0.1] - Foundational proposal
-
-- Constitution published as the governing document.
+- Material 3 icon imports, launcher resource qualification and build configuration for SDK 36.

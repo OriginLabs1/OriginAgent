@@ -27,7 +27,7 @@ foundation. The project is a **OneOrigin initiative**, hosted as
 | Repository | `OriginLabs1/OriginAgent` (public) |
 | License | MIT (see `LICENSE`) |
 | Local verification | `./gradlew test` (15 tests), `./gradlew lint` (0 errors), `./gradlew assembleDebug -PskipNative=true` produced an installable debug APK (SHA-256 `f2bcc7607e4859f8ab8d5ff7f7ef676be575eee01e11bc8b2fdaf972c1eb10a7`). Native layer disabled locally only because the downloaded NDK host tools are x86-64; CI builds it by default. |
-| Publishing | Source and APK not yet pushed to GitHub; authentication is the remaining blocker. |
+| Publishing | Source published at `OriginLabs1/OriginAgent`; release `v0.0.1` published on GitHub Releases with APK and `SHA256SUMS.txt`. No Play Store listing. |
 
 ## 2. What is already decided (do not re-litigate without evidence)
 

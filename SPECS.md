@@ -55,12 +55,12 @@ Deliverables: `CONSTITUTION.md`, `CONTEXT.md`, `SPECS.md`, `LICENSE`, `README.md
 ### Phase 1 — Lightweight harness (current)
 Deliverables: domain model, planner, policy, tool registry, verifier, memory store,
 provenance ledger, deterministic local engine, unit tests.
-Exit: `./gradlew test` green; pipeline works with no model and no network.
+Exit: `bash ./gradlew test` green; pipeline works with no model and no network.
 
 ### Phase 2 — Native foundation
 Deliverables: C/C++ provenance + normalization library via JNI, CMake build,
 graceful Kotlin fallback when the library is unavailable.
-Exit: `./gradlew assembleDebug` green on ARM64 and x86-64 toolchains; tests pass.
+Exit: `bash ./gradlew assembleDebug` green on ARM64 and x86-64 toolchains; tests pass.
 
 ### Phase 3 — Native UI
 Deliverables: five-screen Material 3 Expressive app, dynamic color, motion,
@@ -103,9 +103,9 @@ additional platforms. Evidence-gated; no architectural dependency on any platfor
 
 ```bash
 # Local verification
-./gradlew test                    # JVM unit tests (fast, offline-safe)
-./gradlew lint                    # Android lint
-./gradlew assembleDebug           # APK in app/build/outputs/apk/debug/
+bash ./gradlew test                    # JVM unit tests (fast, offline-safe)
+bash ./gradlew lint                    # Android lint
+bash ./gradlew assembleDebug           # APK in app/build/outputs/apk/debug/
 
 # Device smoke test
 adb install -r app/build/outputs/apk/debug/app-debug.apk
@@ -113,7 +113,7 @@ adb logcat | grep -i origin
 
 # Hosts whose NDK binaries cannot run (e.g. aarch64 Linux) can skip the optional native layer.
 # Kotlin fallbacks are complete; CI/release runners build native by default.
-./gradlew test lint assembleDebug -PskipNative=true
+bash ./gradlew test lint assembleDebug -PskipNative=true
 
 # Release (tag-driven via GitHub Actions)
 git tag v0.0.1 && git push origin v0.0.1
@@ -134,7 +134,7 @@ git tag v0.0.1 && git push origin v0.0.1
 1. Read `CONTEXT.md` + this file.
 2. Write the smallest testable slice; add or update tests first when practical.
 3. Implement behind the existing interfaces; do not bypass authorization or provenance.
-4. Run `./gradlew test` and `./gradlew assembleDebug`.
+4. Run `bash ./gradlew test` and `bash ./gradlew assembleDebug`.
 5. Exercise the flow in the app (or with a unit test if UI-only changes are not runnable here).
 6. Update `CONTEXT.md` "Current state" and docs when behavior changes.
 7. Commit with a conventional message: `feat(harness): add verifier`, `fix(ui): ...`.
@@ -161,7 +161,7 @@ Intent → Plan → Authorization → Execute → Verify → Persist → Provena
 ### 4.4 Release workflow
 
 1. Update version, changelog and acceptance-criteria checklist.
-2. `./gradlew test lint assembleDebug`.
+2. `bash ./gradlew test lint assembleDebug`.
 3. Tag `vX.Y.Z` and push; `.github/workflows/release.yml` builds and attaches the APK.
 4. Publish notes that state clearly: local-first, no Play Store, no telemetry.
 5. Update F-Droid metadata with APK hash and build commands.
