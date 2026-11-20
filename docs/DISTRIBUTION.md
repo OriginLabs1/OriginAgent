@@ -9,6 +9,12 @@
 | F-Droid metadata (`metadata/com.oneorigin.originagent.yml`) | Free-software catalog readiness |
 | Direct APK from a release | Supported with checksum verification |
 
+## Current release
+
+- `v0.0.1` — <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.1>
+- APK SHA-256: `f2bcc7607e4859f8ab8d5ff7f7ef676be575eee01e11bc8b2fdaf972c1eb10a7`
+- Verify with `sha256sum -c SHA256SUMS.txt`.
+
 ## Where we do **not** distribute (for now)
 
 - **Google Play Store** — explicitly out of scope. No Play App Signing, no Play SDK, no listing.
