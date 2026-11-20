@@ -26,10 +26,11 @@ constitution's foundational version `0.0.1` until the first usable native releas
 - Gradle wrapper and reproducible pinned build configuration.
 - Optional native C/C++ provenance layer with complete Kotlin fallback; local builds can
   use `-PskipNative=true` on hosts without runnable NDK binaries.
-- First installable debug APK published on GitHub Releases with `SHA256SUMS.txt`.
+- First installable, minified release APK published on GitHub Releases with `SHA256SUMS.txt`.
+- Minified and resource-shrunk `release` build type with debug signing for sideloading.
 
 ### Changed
-- CI workflows accept Android SDK licenses before installing SDK packages.
+- CI workflows use the runner's preinstalled Android SDK tools, invoke Gradle through `bash`, and build/attach the release APK.
 
 ### Fixed
 - Material 3 icon imports, launcher resource qualification and build configuration for SDK 36.

@@ -60,7 +60,7 @@ Exit: `bash ./gradlew test` green; pipeline works with no model and no network.
 ### Phase 2 — Native foundation
 Deliverables: C/C++ provenance + normalization library via JNI, CMake build,
 graceful Kotlin fallback when the library is unavailable.
-Exit: `bash ./gradlew assembleDebug` green on ARM64 and x86-64 toolchains; tests pass.
+Exit: `bash ./gradlew assembleRelease` green on ARM64 and x86-64 toolchains; tests pass.
 
 ### Phase 3 — Native UI
 Deliverables: five-screen Material 3 Expressive app, dynamic color, motion,
@@ -73,7 +73,7 @@ Deliverables: adapter interfaces, `llama.cpp` and `bitnet.cpp` optional adapters
 Exit: no weights bundled; adapter absence degrades gracefully; benchmarks cite commands.
 
 ### Phase 5 — Distribution
-Deliverables: signed-or-debug APK attached to a GitHub Release, F-Droid metadata,
+Deliverables: minified, debug-signed release APK attached to a GitHub Release, F-Droid metadata,
 reproducible build instructions. **Explicitly not Google Play Store.**
 Exit: a user can install and use the APK offline.
 
@@ -105,15 +105,15 @@ additional platforms. Evidence-gated; no architectural dependency on any platfor
 # Local verification
 bash ./gradlew test                    # JVM unit tests (fast, offline-safe)
 bash ./gradlew lint                    # Android lint
-bash ./gradlew assembleDebug           # APK in app/build/outputs/apk/debug/
+bash ./gradlew assembleRelease         # APK in app/build/outputs/apk/release/
 
 # Device smoke test
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/release/app-release.apk
 adb logcat | grep -i origin
 
 # Hosts whose NDK binaries cannot run (e.g. aarch64 Linux) can skip the optional native layer.
 # Kotlin fallbacks are complete; CI/release runners build native by default.
-bash ./gradlew test lint assembleDebug -PskipNative=true
+bash ./gradlew test lint assembleRelease -PskipNative=true
 
 # Release (tag-driven via GitHub Actions)
 git tag v0.0.1 && git push origin v0.0.1
@@ -161,7 +161,7 @@ Intent → Plan → Authorization → Execute → Verify → Persist → Provena
 ### 4.4 Release workflow
 
 1. Update version, changelog and acceptance-criteria checklist.
-2. `bash ./gradlew test lint assembleDebug`.
+2. `bash ./gradlew test lint assembleRelease`.
 3. Tag `vX.Y.Z` and push; `.github/workflows/release.yml` builds and attaches the APK.
 4. Publish notes that state clearly: local-first, no Play Store, no telemetry.
 5. Update F-Droid metadata with APK hash and build commands.
