@@ -23,7 +23,7 @@ Builds:
     gradle:
       - app
     subdir: app
-    output: build/outputs/apk/debug/app-debug.apk
+    output: build/outputs/apk/release/app-release.apk
     scanignore:
       - gradle/wrapper/gradle-wrapper.jar
 AutoUpdateMode: Version
