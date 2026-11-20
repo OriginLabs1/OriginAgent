@@ -1,0 +1,41 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+*.hprof
+
+# Android / IDE
+local.properties
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.cxx/
+.externalNativeBuild/
+captures/
+.DS_Store
+
+# Keystores and secrets
+*.jks
+*.keystore
+*.pepk
+keystore.properties
+google-services.json
+*.gpg
+
+# Model weights are never committed
+*.gguf
+*.bin
+*.safetensors
+*.onnx
+*.tflite
+models/downloads/
+
+# Local logs / temp
+*.log
+/tmp/
+
+# Browser automation scratch (not app source)
+node_modules/
+
