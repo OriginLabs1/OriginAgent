@@ -31,7 +31,10 @@ jobs:
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
+          name: origin-pages
           path: site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: origin-pages
