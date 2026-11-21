@@ -67,7 +67,7 @@ jobs:
           tag_name: ${{ env.RELEASE_TAG }}
           generate_release_notes: true
           files: |
-            dist/*.apk
+            dist/origin-agent-${{ env.RELEASE_TAG }}.apk
             dist/SHA256SUMS.txt
           body: |
             ## Origin Agent ${{ env.RELEASE_TAG }}
