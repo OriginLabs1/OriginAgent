@@ -1,29 +1,33 @@
 package com.oneorigin.originagent.models
 
+import com.oneorigin.originagent.util.ModelDownloadManager
 import com.oneorigin.originagent.util.RemoteModelConfig
 import com.oneorigin.originagent.util.RemoteModelConfigStore
 import com.oneorigin.originagent.util.SettingsStore
 import com.oneorigin.originagent.util.StoredAdapter
+import kotlinx.coroutines.CoroutineScope
 
 /**
- * One registry, one honest selection rule: prefer the user's choice when its adapter is
- * genuinely available, otherwise fall back to the always-present local engine.
- * Web access is possible and enabled by default, but the user can switch it off; no
- * network call is ever made for a local model or without an explicitly added/configured adapter.
+ * One registry, one honest rule: conversation is served only by a real AI model — a verified
+ * local GGUF the user downloaded with Get Model, or an explicitly configured web adapter.
+ * The deterministic tool engine is never allowed to answer a chat message.
  */
 class ModelRegistry(
     private val settings: SettingsStore,
-    private val remoteConfig: RemoteModelConfigStore
+    private val remoteConfig: RemoteModelConfigStore,
+    private val downloads: ModelDownloadManager
 ) {
     private val local = LocalDeterministicEngine()
-    private val native: List<InferenceEngine> = listOf(BitnetCppEngine(), LlamaCppEngine())
     private val webAccess: () -> Boolean = { settings.webAccessEnabled }
 
-    private fun builtInRemote(): List<InferenceEngine> = ModelCatalog.ALL
-        .filter { it.isRemote }
+    private fun localEngines(): List<InferenceEngine> = ModelCatalog.LOCAL_MODELS.map { descriptor ->
+        val spec = descriptor.downloadSpec!!
+        LlamaEngine(spec, downloads.path(spec))
+    }
+
+    private fun builtInRemote(): List<InferenceEngine> = ModelCatalog.REMOTE_MODELS
         .map { OpenAiCompatibleEngine(it, remoteConfig, webAccess) }
 
-    /** Adapters added in the UI — built-in web templates or fully custom endpoints. */
     private fun addedAdapters(): List<StoredAdapter> = remoteConfig.adapters()
 
     private fun addedDescriptors(): List<ModelDescriptor> = addedAdapters().map { adapter ->
@@ -47,27 +51,43 @@ class ModelRegistry(
         OpenAiCompatibleEngine(descriptor, remoteConfig, webAccess)
     }
 
-    /** Rebuilt on access so newly added adapters appear immediately. */
+    /** Rebuilt on access so newly added adapters and downloaded weights appear immediately. */
     val engines: List<InferenceEngine>
-        get() = listOf(local) + native + builtInRemote() + addedRemote()
+        get() = listOf(local) + localEngines() + builtInRemote() + addedRemote()
 
     val descriptors: List<ModelDescriptor>
         get() = ModelCatalog.ALL + addedDescriptors()
+
+    /** Only real AI engines may be selected for conversation. */
+    val chatEngines: List<InferenceEngine>
+        get() = engines.filter { descriptor(it.id)?.chatCapable == true }
 
     fun byId(id: String): InferenceEngine? = engines.firstOrNull { it.id == id }
 
     fun descriptor(id: String): ModelDescriptor? = descriptors.firstOrNull { it.id == id }
 
-    fun isAvailable(id: String): Boolean = byId(id)?.isAvailable() == true
+    fun isAvailable(id: String): Boolean = descriptor(id)?.chatCapable == true &&
+        byId(id)?.isAvailable() == true
 
-    fun selected(): InferenceEngine =
-        byId(settings.preferredEngineId)?.takeIf { it.isAvailable() } ?: local
+    /** The real model that will answer chat, or null when the user must Get Model first. */
+    fun selectedChat(): InferenceEngine? {
+        val preferred = byId(settings.preferredEngineId)
+        if (preferred != null && descriptor(preferred.id)?.chatCapable == true && preferred.isAvailable()) {
+            return preferred
+        }
+        return chatEngines.firstOrNull { it.isAvailable() }
+    }
+
+    /** For status display only; never used to generate a chat answer. */
+    fun selected(): InferenceEngine = selectedChat() ?: local
 
     fun selectedDescriptor(): ModelDescriptor =
         descriptor(selected().id) ?: ModelCatalog.LOCAL
 
+    fun hasChatModel(): Boolean = selectedChat() != null
+
     fun select(id: String): Boolean {
-        val engine = byId(id) ?: return false
+        val engine = byId(id)?.takeIf { descriptor(it.id)?.chatCapable == true } ?: return false
         if (!engine.isAvailable()) return false
         settings.preferredEngineId = id
         return true
@@ -98,16 +118,39 @@ class ModelRegistry(
     fun removeAdapter(id: String) {
         if (!id.startsWith("adapter.")) return
         remoteConfig.removeAdapter(id)
-        if (settings.preferredEngineId == id) settings.preferredEngineId = ModelCatalog.LOCAL.id
+        if (settings.preferredEngineId == id) settings.preferredEngineId = ""
+    }
+
+    // ---- Verified model downloads -------------------------------------------------------
+
+    fun downloadSpec(id: String): DownloadableModelSpec? = DownloadableModels.forModel(id)
+
+    fun downloadStatus(id: String): ModelDownloadManager.Status? =
+        DownloadableModels.forModel(id)?.let { downloads.status(it) }
+
+    fun isDownloaded(id: String): Boolean =
+        DownloadableModels.forModel(id)?.let { downloads.isReady(it) } ?: false
+
+    fun download(id: String, scope: CoroutineScope) {
+        DownloadableModels.forModel(id)?.let { downloads.download(it, scope) }
+    }
+
+    fun cancelDownload(id: String) {
+        DownloadableModels.forModel(id)?.let { downloads.cancel(it) }
+    }
+
+    fun deleteWeights(id: String) {
+        DownloadableModels.forModel(id)?.let { downloads.delete(it) }
+        if (settings.preferredEngineId == id) settings.preferredEngineId = ""
     }
 
     fun summary(): String = buildString {
-        append("Models (selection follows the real serving engine):\n")
-        engines.forEach { engine ->
+        append("Models (chat only uses a real downloaded or configured AI model):\n")
+        chatEngines.forEach { engine ->
             val descriptor = descriptor(engine.id)
-            val status = if (engine.isAvailable()) "available" else "not configured"
+            val status = if (engine.isAvailable()) "available" else "not downloaded / not configured"
             append("• ${engine.displayName} — ${descriptor?.provider ?: "unknown provider"} — $status\n")
         }
-        append("Active: ${selectedDescriptor().displayName}")
+        append("Active: ${selectedChat()?.displayName ?: "none — tap Get Model"}")
     }
 }

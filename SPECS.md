@@ -23,6 +23,7 @@ A "skill" here is a capability the project must be able to perform, not a market
 | S-08 | Work fully offline | App passes tests with engines disabled and airplane mode |
 | S-09 | Swap inference engines without UI changes | Engine registry + capability negotiation |
 | S-10 | Export all user data | JSON export includes memory, provenance, preferences |
+| S-11 | Present a coherent, accessible Aurora UI | Contrast-tested palettes, truthful model chip, reduced-motion support |
 
 ### 1.2 Tool skills (v0.0.1)
 
@@ -68,9 +69,12 @@ accessibility, phone/tablet layouts.
 Exit: manual smoke flow on a 360 dp viewport and a tablet viewport; zero console/runtime errors.
 
 ### Phase 4 — Model adapters and evidence
-Deliverables: adapter interfaces, `llama.cpp` and `bitnet.cpp` optional adapters,
-`docs/MODEL_REGISTRY.md`, reproducible benchmark harness.
-Exit: no weights bundled; adapter absence degrades gracefully; benchmarks cite commands.
+Deliverables: `InferenceEngine` adapters for four verified GGUF models through bundled
+`llama.cpp` plus OpenAI-compatible web adapters; `docs/MODEL_REGISTRY.md`; reproducible
+benchmark harness.
+Exit: no user-supplied weights; local weights install with published SHA-256 verification;
+chat is impossible until a real model is available; unavailable engines report typed errors
+with no rule-based fallback; benchmarks cite commands.
 
 ### Phase 5 — Distribution
 Deliverables: minified, debug-signed release APK attached to a GitHub Release, F-Droid metadata,
@@ -153,7 +157,7 @@ Intent → Plan → Authorization → Execute → Verify → Persist → Provena
 ### 4.3 Model evaluation workflow
 
 1. Register the candidate in `docs/MODEL_REGISTRY.md` with license and source.
-2. Verify the runtime supports its quantization (`bitnet.cpp` for ternary, `llama.cpp` for GGUF, etc.).
+2. Verify the bundled runtime support (the llama.cpp AAR supports the pinned TQ1_0 and Q4_K_M GGUFs).
 3. Run the fixed benchmark suite on the reference device and on a desktop baseline.
 4. Record task quality, footprint, TTFT, energy/thermal notes, reliability, and command used.
 5. Promote only on evidence. Never bundle weights in the APK or repository.

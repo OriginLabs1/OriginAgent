@@ -17,6 +17,7 @@ import com.oneorigin.originagent.tools.NotesAddTool
 import com.oneorigin.originagent.tools.NotesSearchTool
 import com.oneorigin.originagent.tools.SystemStatusTool
 import com.oneorigin.originagent.tools.ToolRegistry
+import com.oneorigin.originagent.util.ModelDownloadManager
 import com.oneorigin.originagent.util.NativeBridge
 import com.oneorigin.originagent.util.RemoteModelConfigStore
 import com.oneorigin.originagent.util.SettingsStore
@@ -29,7 +30,8 @@ class OriginAgentApplication : Application() {
     val memory: MemoryStore by lazy { MemoryStore(filesDir) }
     val ledger: ProvenanceLedger by lazy { ProvenanceLedger(filesDir) }
     val knowledge: KnowledgeBase by lazy { KnowledgeBase() }
-    val models: ModelRegistry by lazy { ModelRegistry(settings, remoteModels) }
+    val modelDownloads: ModelDownloadManager by lazy { ModelDownloadManager(this) }
+    val models: ModelRegistry by lazy { ModelRegistry(settings, remoteModels, modelDownloads) }
     val nativeBridge: NativeBridge get() = NativeBridge
 
     val tools: ToolRegistry by lazy {
@@ -41,7 +43,7 @@ class OriginAgentApplication : Application() {
                 NotesAddTool(memory),
                 NotesSearchTool(memory),
                 SystemStatusTool(
-                    statusProvider = { "Active engine: ${models.selected().displayName}" },
+                    statusProvider = { "Chat model: ${models.selectedChat()?.displayName ?: "none — tap Get Model"}" },
                     nativeAvailable = { NativeBridge.isAvailable() }
                 ),
                 ModelStatusTool { models.summary() }

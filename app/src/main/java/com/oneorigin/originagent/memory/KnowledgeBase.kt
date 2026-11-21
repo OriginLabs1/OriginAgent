@@ -23,7 +23,7 @@ class KnowledgeBase {
         ),
         Entry(
             "Model agnosticism",
-            "No model earns permanent preference without demonstrable superiority. BitNet b1.58, LFM2.5-class, optimized sub-1B and Qwen-class compact models are strategic candidates, not a ranking.",
+            "No model earns permanent preference without demonstrable superiority. Every model offered in the picker is downloadable and verified by Origin; research families stay in the registry until they can be fetched, run and benchmarked on-device.",
             "CONSTITUTION.md §6"
         ),
         Entry(

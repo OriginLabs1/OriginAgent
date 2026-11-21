@@ -16,8 +16,8 @@ android {
         applicationId = "com.oneorigin.originagent"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.0.2"
+        versionCode = 3
+        versionName = "0.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -86,6 +86,21 @@ if (skipNative) {
     // This task invokes host NDK tools even when no native libraries are built locally.
     tasks.matching { it.name.startsWith("extract") && it.name.contains("NativeSymbolTables") }
         .configureEach { enabled = false }
+
+    // Third-party AARs (the llama.cpp runtime) still ship native libraries. With stripping
+    // disabled, copy them into the directory AGP packages from so the APK keeps its runtime.
+    for (variant in listOf("Debug", "Release")) {
+        val lower = variant.lowercase()
+        val copy = tasks.register<Copy>("copySkipNativeLibs$variant") {
+            from("build/intermediates/merged_native_libs/$lower/merge${variant}NativeLibs/out/lib")
+            into("build/intermediates/stripped_native_libs/$lower/strip${variant}DebugSymbols/out/lib")
+            dependsOn("merge${variant}NativeLibs")
+        }
+        tasks.matching { it.name == "package$variant" }.configureEach {
+            dependsOn(copy)
+            mustRunAfter("strip${variant}DebugSymbols")
+        }
+    }
 }
 
 dependencies {
@@ -95,6 +110,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
     implementation("androidx.navigation:navigation-compose:2.9.8")
+
+    // Real on-device GGUF inference (llama.cpp, arm64-v8a, MIT). Models are downloaded
+    // and SHA-256 verified at runtime; no weights ship in the APK.
+    implementation("dev.ffmpegkit-maintained:llama-android:0.1.1")
 
     implementation(platform("androidx.compose:compose-bom:2026.02.01"))
     implementation("androidx.compose.ui:ui")

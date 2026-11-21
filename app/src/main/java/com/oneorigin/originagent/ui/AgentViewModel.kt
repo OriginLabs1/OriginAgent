@@ -15,6 +15,7 @@ import com.oneorigin.originagent.models.AdapterTemplates
 import com.oneorigin.originagent.models.ModelCatalog
 import com.oneorigin.originagent.models.ModelDescriptor
 import com.oneorigin.originagent.util.Ids
+import com.oneorigin.originagent.util.ModelDownloadManager
 import com.oneorigin.originagent.util.JsonCodec
 import com.oneorigin.originagent.util.ThemeMode
 import kotlinx.coroutines.CompletableDeferred
@@ -34,7 +35,7 @@ data class AgentUiState(
     val messages: List<ChatMessage> = listOf(
         ChatMessage(
             id = "welcome",
-            text = "I'm Origin. I work offline, keep your data local, and show you exactly what I did. Use the model chip above to choose which model answers — the conversation continues when you switch.",
+            text = "I'm Origin. Conversation happens only with a real AI model that you download here — tap Get Model and choose one. Your chats stay on this device, and every reply names the model that answered.",
             isUser = false
         )
     ),
@@ -50,9 +51,11 @@ data class AgentUiState(
     val reducedMotion: Boolean = false,
     val autoApproveLowRisk: Boolean = true,
     val notice: String? = null,
-    // v0.0.2 — universal model picker
-    val models: List<ModelDescriptor> = ModelCatalog.ALL,
-    val selectedModelId: String = ModelCatalog.LOCAL.id,
+    // v0.0.3 — real AI models only; the tool engine is not a chat option
+    val models: List<ModelDescriptor> = ModelCatalog.CHAT_MODELS,
+    val selectedModelId: String = "",
+    val chatReady: Boolean = false,
+    val nativeRuntimeReady: Boolean = false,
     val modelStatuses: Map<String, String> = emptyMap(),
     val modelPickerOpen: Boolean = false,
     val configuringModelId: String? = null,
@@ -65,7 +68,9 @@ data class AgentUiState(
     val newAdapterEndpoint: String = "",
     val newAdapterModel: String = "",
     val newAdapterKey: String = "",
-    val webAccessEnabled: Boolean = true
+    val webAccessEnabled: Boolean = true,
+    /** Per-model download progress; drives the picker's Download / Ready controls. */
+    val downloadStatuses: Map<String, ModelDownloadManager.Status> = emptyMap()
 )
 
 class AgentViewModel(application: Application) : AndroidViewModel(application) {
@@ -75,15 +80,77 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     private var consentDeferred: CompletableDeferred<Boolean>? = null
 
+    private val downloadListener: (String, ModelDownloadManager.Status) -> Unit = { id, status ->
+        _ui.value = _ui.value.copy(
+            downloadStatuses = _ui.value.downloadStatuses + (id to status),
+            modelStatuses = _ui.value.modelStatuses + (
+                id to when (status.state) {
+                    ModelDownloadManager.State.READY -> "Verified · ready to use offline"
+                    ModelDownloadManager.State.DOWNLOADING -> "${status.progress}% of verified weights"
+                    ModelDownloadManager.State.FAILED -> status.message
+                    ModelDownloadManager.State.NOT_DOWNLOADED -> status.message
+                }
+                )
+        )
+        if (status.state == ModelDownloadManager.State.READY && !app.models.hasChatModel()) {
+            app.models.select(id)
+        }
+        refreshStatus()
+    }
+
     init {
         readSettings()
         app.consentRequest = { step -> requestConsent(step) }
+        app.modelDownloads.addListener(downloadListener)
+        refreshDownloads()
+        refreshStatus()
+    }
+
+    private fun refreshDownloads() {
+        val statuses = app.models.descriptors.mapNotNull { descriptor ->
+            app.models.downloadStatus(descriptor.id)?.let { descriptor.id to it }
+        }.toMap()
+        _ui.value = _ui.value.copy(downloadStatuses = statuses)
+    }
+
+    /** One tap: fetch, verify and activate a model — no user-supplied weights. */
+    fun downloadModel(id: String) {
+        val descriptor = app.models.descriptor(id) ?: return
+        val spec = descriptor.downloadSpec ?: return
+        _ui.value = _ui.value.copy(
+            modelStatuses = _ui.value.modelStatuses + (id to "Downloading ${app.modelDownloads.formatSize(spec.sizeBytes)} of verified weights…"),
+            notice = "Getting ${descriptor.displayName} — the download is checksum-verified before chat can start."
+        )
+        app.models.download(id, viewModelScope)
+    }
+
+    fun cancelDownload(id: String) {
+        app.models.cancelDownload(id)
+        _ui.value = _ui.value.copy(
+            modelStatuses = _ui.value.modelStatuses + (id to "Download cancelled")
+        )
+    }
+
+    fun deleteWeights(id: String) {
+        app.models.deleteWeights(id)
+        _ui.value = _ui.value.copy(
+            modelStatuses = _ui.value.modelStatuses + (id to "Weights removed — tap Get Model to fetch again"),
+            models = app.models.descriptors
+        )
+        refreshDownloads()
         refreshStatus()
     }
 
     fun send(text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty() || _ui.value.busy) return
+        if (!app.models.hasChatModel()) {
+            _ui.value = _ui.value.copy(
+                notice = "Get a model first — chatting is only with a real downloaded AI model."
+            )
+            openModelPicker()
+            return
+        }
         viewModelScope.launch {
             _ui.value = _ui.value.copy(
                 busy = true,
@@ -126,7 +193,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             notice = if (selected) {
                 "Now answering with ${descriptor?.displayName ?: id}. Conversation continues unchanged."
             } else {
-                "${descriptor?.displayName ?: id} is not available yet — configure or test it first."
+                if (descriptor?.isDownloadable == true) {
+                    "${descriptor.displayName} needs its weights first — tap Get Model in the picker."
+                } else {
+                    "${descriptor?.displayName ?: id} is not available yet — configure or test it first."
+                }
             }
         )
         refreshStatus()
@@ -141,6 +212,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun openModelPicker() {
         _ui.value = _ui.value.copy(modelPickerOpen = true)
     }
+
+    /** The primary chat entry point: acquire a real AI model, never user-supplied weights. */
+    fun getModel() = openModelPicker()
 
     fun closeModelPicker() {
         _ui.value = _ui.value.copy(modelPickerOpen = false)
@@ -310,8 +384,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshStatus() = viewModelScope.launch {
         _ui.value = _ui.value.copy(
-            engineLabel = app.models.selectedDescriptor().displayName,
-            selectedModelId = app.models.selected().id,
+            engineLabel = app.models.selectedChat()?.displayName ?: "No model · Get Model",
+            selectedModelId = app.models.selectedChat()?.id ?: "",
+            chatReady = app.models.hasChatModel(),
+            nativeRuntimeReady = com.oneorigin.originagent.models.LlamaRuntime.available(),
             nativeLabel = if (app.nativeBridge.isAvailable()) "C/C++ native" else "Kotlin fallback",
             memoryCount = app.memory.all().size,
             chainValid = app.ledger.verify()
@@ -377,6 +453,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     override fun onCleared() {
+        app.modelDownloads.removeListener(downloadListener)
         app.consentRequest = null
         consentDeferred?.cancel()
         super.onCleared()

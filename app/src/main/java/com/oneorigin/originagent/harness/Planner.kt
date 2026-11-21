@@ -6,12 +6,15 @@ import com.oneorigin.originagent.domain.PlanStep
 import com.oneorigin.originagent.domain.RiskLevel
 import com.oneorigin.originagent.util.Ids
 
-/** Deterministic, inspectable planning. Optional models may assist later, never decide alone. */
+/**
+ * Deterministic, inspectable planning. Tools may gather verified context, but every user
+ * conversation finishes with a real AI model step — a rule-based tool never becomes the answer.
+ */
 class Planner {
 
     fun plan(intent: Intent): Plan {
         val text = intent.text.trim()
-        val step = when {
+        val primary = when {
             REMEMBER.matches(text) -> PlanStep(
                 id = Ids.next("step"),
                 description = "Save the user's note to local memory",
@@ -63,24 +66,22 @@ class Planner {
                 toolId = "model.status"
             )
 
-            else -> PlanStep(
-                id = Ids.next("step"),
-                description = "Answer using the selected local engine",
-                toolId = "engine.generate",
-                input = mapOf("prompt" to text)
-            )
+            else -> generationStep(text)
         }
 
-        val steps = if (step.toolId == "system.status") {
-            listOf(
-                step,
+        val steps = when (primary.toolId) {
+            "engine.generate" -> listOf(primary)
+            "system.status" -> listOf(
+                primary,
                 PlanStep(
                     id = Ids.next("step"),
                     description = "Report engine availability",
                     toolId = "model.status"
-                )
+                ),
+                generationStep(text)
             )
-        } else listOf(step)
+            else -> listOf(primary, generationStep(text))
+        }
 
         return Plan(
             id = Ids.next("plan"),
@@ -89,6 +90,13 @@ class Planner {
             steps = steps
         )
     }
+
+    private fun generationStep(prompt: String) = PlanStep(
+        id = Ids.next("step"),
+        description = "Answer with the selected real AI model",
+        toolId = "engine.generate",
+        input = mapOf("prompt" to prompt)
+    )
 
     private fun isCalculation(text: String): Boolean {
         if (!text.any { it.isDigit() }) return false

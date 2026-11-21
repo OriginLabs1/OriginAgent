@@ -12,6 +12,45 @@ constitution's foundational version `0.0.1` until the first usable native releas
 ### Fixed
 - _Nothing yet._
 
+## [0.0.3] - 2026-11-21
+
+### Added
+- **Four real, downloadable AI models.** BitNet b1.58 2B4T, LFM2.5 350M, optimized sub-1B
+  (SmolLM2 360M) and Qwen-class compact (Qwen2.5 0.5B) are now actual GGUF artifacts with
+  public URLs, pinned sizes and SHA-256 checksums — not research notes. `Get Model` downloads
+  and verifies the weights, `LlamaEngine` runs them through a bundled MIT llama.cpp AAR, and
+  the picker exposes progress, cancel, remove and Use controls. Nothing is user-supplied.
+- **Chat requires a real AI model.** The deterministic engine is now tool/status only and can
+  never generate a conversation. Every user conversation ends with a real model step; tools may
+  gather verified context first but never become the assistant's answer. Until a verified local
+  model or an explicitly configured web adapter is available, the composer is gated behind a
+  **Get Model** action; there is no rule-based fallback that imitates a model.
+- **Aurora design system** — a complete visual reimplementation of the Origin Agent UI:
+  obsidian canvas with layered light wells, glass surfaces, luminous status pills,
+  gradient conversation turns, a lighter companion palette and a floating navigation dock.
+- `ui/components/Aurora.kt` with reusable background, mark, glass card, model chip,
+  gradient action and section primitives. The Origin mark is drawn from primitives;
+  no new assets or dependencies are introduced.
+- `docs/DESIGN_SYSTEM.md` documenting tokens, motion, accessibility and the rationale
+  for the redesign.
+- JVM contrast tests for both Aurora palettes, enforcing WCAG AA on primary text surfaces.
+
+### Changed
+- Chat now opens on a focused conversational hero with starter cards; the active model is
+  always visible in a dedicated chip and every assistant turn carries attribution and
+  verified/attempted status.
+- Capabilities, Memory, Trust and Settings were rebuilt on the same glass-card language;
+  consent and model dialogs share the new rounded, tonal treatment.
+- Typography moved to tighter display sizes with a monospace micro-label voice; reduced
+  motion now disables ambient Aurora drift globally.
+- Product website (`site/`) adopted the Aurora palette and glass language.
+- `versionCode` 3 / `versionName` 0.0.3; F-Droid metadata updated for the new tag.
+
+### Fixed
+- Deprecated send icon usage replaced with the auto-mirrored variant.
+- The toy `OriginCompactEngine` and its 4.4 KB JSONL weights were removed; a weighted-intent
+  program can no longer answer a conversation.
+
 ## [0.0.2] - 2026-11-21
 
 ### Added

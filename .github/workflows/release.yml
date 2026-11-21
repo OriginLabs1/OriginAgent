@@ -56,7 +56,9 @@ jobs:
         run: |
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk dist/origin-agent-${RELEASE_TAG}.apk
-          sha256sum dist/*.apk > dist/SHA256SUMS.txt
+          # Checksum only the APK built for this tag; archived older APKs may be
+          # local (skipNative) builds and must not be mistaken for release artifacts.
+          sha256sum dist/origin-agent-${RELEASE_TAG}.apk > dist/SHA256SUMS.txt
           cat dist/SHA256SUMS.txt
 
       - name: Create GitHub Release
@@ -73,6 +75,7 @@ jobs:
             **Universal intelligence. Trustworthy execution. Human empowerment.**
 
             - Native Android app. Offline-first. No account, telemetry, ads or mandatory cloud.
+            - Four real downloadable AI models: BitNet b1.58 2B4T, LFM2.5 350M, SmolLM2 360M and Qwen2.5 0.5B. Chat requires a verified local GGUF or a real configured endpoint; rules never imitate a model.
             - Distributed on GitHub Releases only — **not on the Google Play Store**.
             - Verify the APK with `sha256sum -c SHA256SUMS.txt` before installing.
 

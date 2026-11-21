@@ -35,6 +35,10 @@ models/downloads/
 # Local logs / temp
 *.log
 /tmp/
+.kotlin/
 
 # Browser automation scratch (not app source)
 node_modules/
+
+# Local workspace metadata (not app source)
+.origin/

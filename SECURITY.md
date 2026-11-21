@@ -28,5 +28,8 @@ You should receive an acknowledgement within 7 days (best effort, volunteer proj
 
 ## Scope notes
 
-Origin Agent is a foundational release. It is **not** a sandbox for untrusted arbitrary code,
-and user-supplied model files should come from trusted sources. Report gaps accordingly.
+Origin Agent is a foundational release. It is **not** a sandbox for untrusted arbitrary code.
+Local model weights are fetched only from the verified URLs published in
+`DownloadableModels.kt`, and every file is SHA-256 checked before it can become active; the
+app does not load arbitrary model files from the user or from other sources. Report gaps
+accordingly.

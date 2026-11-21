@@ -35,8 +35,8 @@ class LocalDeterministicEngine : InferenceEngine {
 
     private fun modelAnswer() = buildString {
         append("I'm the deterministic local engine, so I work without a model or internet. ")
-        append("BitNet b1.58, LFM2.5-class, compact and Qwen-class models are optional candidates; ")
-        append("each must earn its place through evidence. No weights are bundled.")
+        append("For a language model, open the picker and tap Download — Origin fetches and verifies ")
+        append("the weights, then runs them on this device. Research candidates stay in the registry until they can be downloaded and proven.")
     }
 
     private fun fallbackAnswer() = buildString {

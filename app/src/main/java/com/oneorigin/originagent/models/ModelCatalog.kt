@@ -24,60 +24,67 @@ data class ModelDescriptor(
     val defaultEndpoint: String? = null,
     val requiresApiKey: Boolean = false,
     val docsUrl: String? = null,
-    val researchOnly: Boolean = false
+    val researchOnly: Boolean = false,
+    /** Present only when Origin can fetch, verify and run the weights by itself. */
+    val downloadSpec: DownloadableModelSpec? = null,
+    /**
+     * False for the deterministic tool engine. Chat is only ever conducted with a real AI
+     * model the user downloaded with "Get Model" or explicitly configured as a web adapter.
+     */
+    val chatCapable: Boolean = true
 ) {
     val isRemote: Boolean get() = kind == ModelKind.REMOTE_OPENAI_COMPATIBLE
+    val isDownloadable: Boolean get() = downloadSpec != null
 
     val kindLabel: String get() = when (kind) {
-        ModelKind.LOCAL_DETERMINISTIC -> "Always offline"
-        ModelKind.LOCAL_NATIVE -> "Local runtime"
+        ModelKind.LOCAL_DETERMINISTIC -> "Tool engine"
+        ModelKind.LOCAL_NATIVE -> "Local GGUF"
         ModelKind.REMOTE_OPENAI_COMPATIBLE -> "Remote endpoint"
     }
 }
 
-/** Selectable models. Candidates are research directions, not performance claims. */
+/** Selectable models. Every local entry is a real GGUF that Origin downloads and runs. */
 object ModelCatalog {
 
+    /**
+     * The deterministic engine still powers tools and status, but it is deliberately not
+     * chat-capable: conversation is only with a real downloaded or configured AI model.
+     */
     val LOCAL = ModelDescriptor(
         id = "local.deterministic",
-        displayName = "Origin Local",
+        displayName = "Origin Tool Engine",
         modelName = "origin-local-deterministic",
         provider = "OneOrigin",
         providerId = "oneorigin",
         kind = ModelKind.LOCAL_DETERMINISTIC,
-        description = "Deterministic offline reasoning. Works with no model and no network.",
+        description = "Deterministic offline tools and status; it does not hold conversations.",
         capabilities = setOf("offline", "tools", "knowledge", "trust"),
-        limitations = "Rule-based answers; not a general-purpose language model.",
+        limitations = "Rule-based tool engine, not a language model. Get a model to chat.",
+        chatCapable = false,
         docsUrl = "https://github.com/OriginLabs1/OriginAgent/blob/main/docs/MODEL_REGISTRY.md"
     )
 
-    val BITNET = ModelDescriptor(
-        id = "engine.bitnet.cpp",
-        displayName = "bitnet.cpp",
-        modelName = "bitnet-b1.58-2B-4T (user supplied)",
-        provider = "Microsoft BitNet / bitnet.cpp",
-        providerId = "bitnet.cpp",
+    private fun localModel(spec: DownloadableModelSpec) = ModelDescriptor(
+        id = spec.modelId,
+        displayName = spec.label,
+        modelName = spec.format,
+        provider = "OneOrigin · verified download",
+        providerId = "oneorigin.local",
         kind = ModelKind.LOCAL_NATIVE,
-        description = "Ternary inference direction. Requires user-supplied weights and a compiled bridge.",
-        capabilities = setOf("local", "ternary", "research"),
-        limitations = "Optional adapter; exact ARM/kernel compatibility must be validated on-device.",
-        docsUrl = "https://github.com/microsoft/BitNet",
-        researchOnly = true
+        description = "${spec.family}. ${spec.summary} Origin downloads, checks the SHA-256 and runs it on-device.",
+        capabilities = setOf("chat", "offline", "local", "downloadable", "gguf"),
+        limitations = "${spec.license}. ${spec.summary}",
+        docsUrl = spec.licenseUrl,
+        downloadSpec = spec
     )
 
-    val LLAMA = ModelDescriptor(
-        id = "engine.llama.cpp",
-        displayName = "llama.cpp",
-        modelName = "GGUF (user supplied)",
-        provider = "ggml / llama.cpp",
-        providerId = "llama.cpp",
-        kind = ModelKind.LOCAL_NATIVE,
-        description = "Portable GGUF baseline runtime. Requires user-supplied weights and a compiled bridge.",
-        capabilities = setOf("local", "gguf", "optional"),
-        limitations = "Optional adapter; do not force incompatible models into this runtime.",
-        docsUrl = "https://github.com/ggml-org/llama.cpp",
-        researchOnly = true
-    )
+    val BITNET = localModel(DownloadableModels.BITNET_2B4T)
+    val LFM2_5 = localModel(DownloadableModels.LFM2_5_350M)
+    val SUB_1B = localModel(DownloadableModels.SUB_1B)
+    val QWEN = localModel(DownloadableModels.QWEN_COMPACT)
+
+    /** The four strategic families, in the order the constitution lists them. */
+    val LOCAL_MODELS: List<ModelDescriptor> = listOf(BITNET, LFM2_5, SUB_1B, QWEN)
 
     val OPENAI = ModelDescriptor(
         id = "remote.openai",
@@ -151,9 +158,12 @@ object ModelCatalog {
         docsUrl = "https://github.com/OriginLabs1/OriginAgent/blob/main/docs/MODEL_REGISTRY.md"
     )
 
-    val ALL: List<ModelDescriptor> = listOf(
-        LOCAL, BITNET, LLAMA, OPENAI, OLLAMA, LM_STUDIO, OPENROUTER, CUSTOM
-    )
+    val REMOTE_MODELS: List<ModelDescriptor> = listOf(OPENAI, OLLAMA, LM_STUDIO, OPENROUTER, CUSTOM)
+
+    val ALL: List<ModelDescriptor> = listOf(LOCAL) + LOCAL_MODELS + REMOTE_MODELS
+
+    /** Models that can actually hold a conversation. The tool engine is excluded. */
+    val CHAT_MODELS: List<ModelDescriptor> = ALL.filter { it.chatCapable }
 
     fun byId(id: String): ModelDescriptor? = ALL.firstOrNull { it.id == id }
 }

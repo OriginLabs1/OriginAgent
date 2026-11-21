@@ -4,23 +4,31 @@ import android.app.Application
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,8 +37,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,6 +58,7 @@ import com.oneorigin.originagent.domain.MemoryEntry
 import com.oneorigin.originagent.domain.ProvenanceRecord
 import com.oneorigin.originagent.ui.AgentUiState
 import com.oneorigin.originagent.ui.AgentViewModel
+import com.oneorigin.originagent.ui.components.AuroraMark
 import com.oneorigin.originagent.ui.screens.AddAdapterDialog
 import com.oneorigin.originagent.ui.screens.CapabilitiesScreen
 import com.oneorigin.originagent.ui.screens.MemoryScreen
@@ -52,6 +67,7 @@ import com.oneorigin.originagent.ui.screens.OriginScreen
 import com.oneorigin.originagent.ui.screens.RemoteConfigDialog
 import com.oneorigin.originagent.ui.screens.SettingsScreen
 import com.oneorigin.originagent.ui.screens.TrustScreen
+import com.oneorigin.originagent.ui.theme.Aurora
 import com.oneorigin.originagent.ui.theme.OriginTheme
 import kotlinx.coroutines.launch
 
@@ -64,7 +80,8 @@ class MainActivity : ComponentActivity() {
             val vm: AgentViewModel = viewModel(factory = OriginViewModelFactory(app))
             OriginTheme(
                 themeMode = vm.ui.value.themeMode,
-                dynamicColor = vm.ui.value.dynamicColor
+                dynamicColor = vm.ui.value.dynamicColor,
+                reducedMotion = vm.ui.value.reducedMotion
             ) {
                 OriginAgentApp(vm)
             }
@@ -77,7 +94,11 @@ class OriginViewModelFactory(private val app: Application) : ViewModelProvider.F
     override fun <T : ViewModel> create(modelClass: Class<T>): T = AgentViewModel(app) as T
 }
 
-private data class Destination(val route: String, val label: String, val icon: @Composable () -> Unit)
+private data class Destination(
+    val route: String,
+    val label: String,
+    val icon: ImageVector
+)
 
 @Composable
 private fun OriginAgentApp(vm: AgentViewModel) {
@@ -90,11 +111,11 @@ private fun OriginAgentApp(vm: AgentViewModel) {
     val ui by vm.ui
 
     val destinations = listOf(
-        Destination("origin", "Origin") { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null) },
-        Destination("capabilities", "Tools") { Icon(Icons.Filled.AutoAwesome, contentDescription = null) },
-        Destination("memory", "Memory") { Icon(Icons.Filled.Storage, contentDescription = null) },
-        Destination("trust", "Trust") { Icon(Icons.Filled.VerifiedUser, contentDescription = null) },
-        Destination("settings", "Settings") { Icon(Icons.Filled.Settings, contentDescription = null) }
+        Destination("origin", "Origin", Icons.AutoMirrored.Filled.Chat),
+        Destination("capabilities", "Tools", Icons.Filled.AutoAwesome),
+        Destination("memory", "Memory", Icons.Filled.Storage),
+        Destination("trust", "Trust", Icons.Filled.VerifiedUser),
+        Destination("settings", "Settings", Icons.Filled.Settings)
     )
 
     val memories by produceState(initialValue = emptyList<MemoryEntry>(), key1 = ui.memoryCount) {
@@ -109,23 +130,56 @@ private fun OriginAgentApp(vm: AgentViewModel) {
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            NavigationBar {
-                destinations.forEach { destination ->
-                    val selected = current?.hierarchy?.any { it.route == destination.route } == true
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = destination.icon,
-                        label = { Text(destination.label) }
-                    )
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)),
+                shadowElevation = 0.dp,
+                tonalElevation = 0.dp
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 7.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    destinations.forEach { destination ->
+                        val selected = current?.hierarchy?.any { it.route == destination.route } == true
+                        val accent = if (selected) Aurora.Violet else MaterialTheme.colorScheme.onSurfaceVariant
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    if (selected) Brush.linearGradient(
+                                        listOf(
+                                            Aurora.Violet.copy(alpha = 0.28f),
+                                            Aurora.Cyan.copy(alpha = 0.16f)
+                                        )
+                                    ) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
+                                )
+                                .clickable {
+                                    navController.navigate(destination.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                                .padding(horizontal = 11.dp, vertical = 7.dp)
+                        ) {
+                            Icon(destination.icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+                            androidx.compose.material3.Text(
+                                destination.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = accent
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -139,13 +193,14 @@ private fun OriginAgentApp(vm: AgentViewModel) {
                 OriginScreen(
                     ui = ui,
                     onSend = vm::send,
-                    onOpenModelPicker = vm::openModelPicker
+                    onOpenModelPicker = vm::openModelPicker,
+                    onGetModel = vm::getModel
                 )
             }
             composable("capabilities") {
                 CapabilitiesScreen(
                     tools = vm.capabilities(),
-                    models = ui.models,
+                    models = ui.models.filter { it.chatCapable },
                     activeModelId = ui.selectedModelId,
                     availability = vm::isModelAvailable,
                     onSelectModel = { vm.selectModel(it) },
@@ -185,23 +240,35 @@ private fun OriginAgentApp(vm: AgentViewModel) {
     ui.pendingConsent?.let { detail ->
         AlertDialog(
             onDismissRequest = { vm.respondConsent(false) },
-            title = { Text("Consent required") },
-            text = { Text(detail) },
-            confirmButton = { TextButton(onClick = { vm.respondConsent(true) }) { Text("Approve") } },
-            dismissButton = { TextButton(onClick = { vm.respondConsent(false) }) { Text("Decline") } }
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                Column {
+                    androidx.compose.material3.Text("AUTHORIZATION", style = MaterialTheme.typography.labelSmall, color = Aurora.Mint)
+                    androidx.compose.material3.Text("Consent required", style = MaterialTheme.typography.headlineMedium)
+                }
+            },
+            text = { androidx.compose.material3.Text(detail) },
+            confirmButton = { TextButton(onClick = { vm.respondConsent(true) }) { androidx.compose.material3.Text("Approve") } },
+            dismissButton = { TextButton(onClick = { vm.respondConsent(false) }) { androidx.compose.material3.Text("Decline") } }
         )
     }
 
     if (ui.modelPickerOpen) {
         ModelPickerDialog(
-            models = ui.models,
+            models = ui.models.filter { it.chatCapable },
             selectedId = ui.selectedModelId,
             statuses = ui.modelStatuses,
+            downloadStatuses = ui.downloadStatuses,
+            nativeRuntimeReady = ui.nativeRuntimeReady,
             availability = vm::isModelAvailable,
             onSelect = { vm.selectModel(it) },
             onCheck = { vm.checkModel(it) },
             onConfigure = { vm.openModelConfig(it) },
             onClear = { vm.clearModelConfig(it) },
+            onDownload = vm::downloadModel,
+            onCancelDownload = vm::cancelDownload,
+            onDeleteWeights = vm::deleteWeights,
             onAddAdapter = vm::openAddAdapter,
             onRemoveAdapter = { vm.removeAdapter(it) },
             onDismiss = vm::closeModelPicker

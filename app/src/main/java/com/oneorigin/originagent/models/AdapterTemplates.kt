@@ -1,7 +1,7 @@
 package com.oneorigin.originagent.models
 
 /**
- * Built-in web adapter templates. "Add adapter" is not limited to user-supplied endpoints:
+ * Built-in web adapter templates. "Add adapter" is not limited to user-entered endpoints:
  * these first-party templates prefill a documented, OpenAI-compatible /v1 connection, and
  * a fully custom option remains available.
  */

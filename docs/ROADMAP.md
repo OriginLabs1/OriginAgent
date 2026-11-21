@@ -7,9 +7,9 @@ Evidence-gated, not date-gated. See `SPECS.md §2` for exit criteria.
 | 0 | Constitution and governance | Done | Repo + docs published |
 | 1 | Lightweight harness | Done | 15 JVM tests green, offline pipeline verified |
 | 2 | Native C/C++ foundation | In progress | JNI sources complete; Kotlin fallback verified; CI build in progress |
-| 3 | Material 3 Expressive UI | In progress | Screens implemented; phone/tablet device smoke still pending |
+| 3 | Aurora native UI | Shipped in 0.0.3 | Five-screen redesign, contrast-tested palettes, reduced-motion support; device smoke still pending |
 | 4 | Model adapters + benchmarks | In progress | Web adapters + picker shipped in 0.0.2; native bridges and evidence log still pending |
-| 5 | GitHub Releases distribution | Done | `v0.0.1` and staged `v0.0.2` APKs + checksums; no Play Store |
+| 5 | GitHub Releases distribution | Done | `v0.0.1` and `v0.0.2` published; `v0.0.3` Aurora release in progress; no Play Store |
 | 6 | GitHub Pages + Cloudflare Pages | Done | Both sites live; custom domain `origin-agent-kit.coreconcept1.net` active |
 | 7 | Linux/desktop + distributed research | Planned | Shared harness runs off-device |
 

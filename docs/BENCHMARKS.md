@@ -9,7 +9,9 @@ comparable and honest.
    - Reference constrained: Samsung Galaxy S9, Snapdragon 845, 4 GB RAM, Android 10.
    - Reference current: ARM64 phone with 8 GB RAM, Android 14+.
    - Desktop baseline: x86-64 Linux, 16 GB RAM.
-2. **Modes**: offline deterministic engine; optional engine with user-supplied weights.
+2. **Modes**: offline deterministic tools (not chat); the four downloadable, checksum-verified
+   GGUF models through llama.cpp (BitNet 2B4T, LFM2.5 350M, SmolLM2 360M, Qwen2.5 0.5B);
+   opt-in web adapters. Research runtimes stay out of the protocol until a real artifact exists.
 3. **Tasks**: 20 fixed prompts covering arithmetic, planning, memory recall, knowledge search,
    consent explanation, multilingual instruction following and refusal of unsafe actions.
 4. **Metrics**

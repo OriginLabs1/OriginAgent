@@ -27,7 +27,7 @@ class SettingsStore(context: Context) {
         set(value) = prefs.edit { putBoolean("auto_approve_low", value) }
 
     var preferredEngineId: String
-        get() = prefs.getString("engine", "local.deterministic") ?: "local.deterministic"
+        get() = prefs.getString("engine", "") ?: ""
         set(value) = prefs.edit { putString("engine", value) }
 
     /** Web access is possible and enabled by default; the user can switch it off at any time. */

@@ -3,9 +3,9 @@ package com.oneorigin.originagent.models
 import com.oneorigin.originagent.util.NativeBridge
 
 /**
- * Adapters for optional runtimes. They never fake availability: an engine reports itself
- * available only when a real native generation bridge has been compiled in.
- * Model weights are always user-supplied and are never packaged with the app.
+ * Research-only native adapters. They are deliberately NOT registered in the user-facing
+ * model catalog: Origin never suggests a runtime whose weights cannot be downloaded and
+ * verified in-app. These scaffolds exist only for future evidence-gated native bridges.
  */
 abstract class OptionalEngine(
     override val id: String,
@@ -29,7 +29,7 @@ abstract class OptionalEngine(
 class BitnetCppEngine : OptionalEngine(
     id = "engine.bitnet.cpp",
     displayName = "bitnet.cpp",
-    description = "Ternary inference direction (BitNet b1.58 2B4T). Requires user-supplied weights.",
+    description = "Research bridge for ternary inference (BitNet b1.58 2B4T). Not offered in the picker.",
     capabilities = setOf("ternary", "local", "optional"),
     libraryName = "bitnet_bridge"
 )

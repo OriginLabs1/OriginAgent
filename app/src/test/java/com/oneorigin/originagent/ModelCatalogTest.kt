@@ -17,12 +17,14 @@ class ModelCatalogTest {
     }
 
     @Test
-    fun localEngineIsAlwaysAvailableAndHasNoEndpoint() {
+    fun toolEngineIsOfflineButNeverChatCapable() {
         val local = ModelCatalog.LOCAL
         assertEquals(ModelKind.LOCAL_DETERMINISTIC, local.kind)
         assertEquals(null, local.defaultEndpoint)
         assertFalse(local.requiresApiKey)
         assertTrue(local.capabilities.contains("offline"))
+        assertFalse("rule-based tools must never answer a chat", local.chatCapable)
+        assertFalse(ModelCatalog.CHAT_MODELS.contains(local))
     }
 
     @Test
@@ -41,10 +43,18 @@ class ModelCatalogTest {
     }
 
     @Test
-    fun researchEnginesAreClearlyMarked() {
-        assertTrue(ModelCatalog.BITNET.researchOnly)
-        assertTrue(ModelCatalog.LLAMA.researchOnly)
-        assertEquals(ModelKind.LOCAL_NATIVE, ModelCatalog.BITNET.kind)
+    fun everyLocalChatModelIsRealDownloadableGguf() {
+        assertEquals(4, ModelCatalog.LOCAL_MODELS.size)
+        ModelCatalog.LOCAL_MODELS.forEach { model ->
+            assertEquals(ModelKind.LOCAL_NATIVE, model.kind)
+            assertTrue(model.chatCapable)
+            assertTrue(model.isDownloadable)
+            assertNotNull(model.downloadSpec)
+            assertTrue(model.downloadSpec!!.fileName.endsWith(".gguf"))
+            assertTrue(model.capabilities.contains("chat"))
+            assertFalse(model.description.contains("user-supplied", ignoreCase = true))
+        }
+        assertTrue(ModelCatalog.CHAT_MODELS.containsAll(ModelCatalog.LOCAL_MODELS))
     }
 
     @Test
