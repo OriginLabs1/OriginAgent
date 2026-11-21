@@ -36,8 +36,8 @@ offline, keeps your data on your device, and treats trust as an execution proper
 | Channel | Status |
 |---|---|
 | [GitHub Releases](https://github.com/OriginLabs1/OriginAgent/releases) | Primary APK distribution (`v0.0.1`, `v0.0.2`) |
-| [GitHub Pages website](https://originlabs1.github.io/OriginAgent/) | Static site from [`site/`](site/) (enable Pages in repo settings) |
-| [Cloudflare Pages](https://origin-agent-kit.coreconcept1.net) | `origin-agent-kit` project; custom domain to be attached in Cloudflare |
+| [GitHub Pages website](https://originlabs1.github.io/OriginAgent/) | Live static site from [`site/`](site/) |
+| [Cloudflare Pages](https://origin-agent-kit.coreconcept1.net) | Live `origin-agent-kit` project (also on `origin-agent-kit.pages.dev`) |
 | Build from source | `bash ./gradlew assembleRelease` |
 | F-Droid | Metadata in [`metadata/`](metadata/) — submission-ready |
 | Google Play Store | **Not distributed (by design, for now)** |

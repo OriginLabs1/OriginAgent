@@ -13,21 +13,26 @@
 
 ## Current releases
 
-| Version | Release | Reference APK SHA-256 (local build) |
+| Version | Release | Published APK SHA-256 |
 |---|---|---|
-| v0.0.2 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.2> (staged) | `9137109826965c29d0954c7d0f26a027e920ce6d13f901073e5daf4badc029db` |
-| v0.0.1 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.1> (live) | `6e09a39aef75e156115ce58af15aa29a69aab8b2fccc896d890ced1818a58930` |
+| v0.0.2 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.2> | `c2d2f1f258fa5936fce07168c35205cb2d3af52a41c4e9bca154f5042bc191b6` |
+| v0.0.1 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.1> | `6e09a39aef75e156115ce58af15aa29a69aab8b2fccc896d890ced1818a58930` |
 
-The v0.0.2 reference APK in `dist/` was built locally with `-PskipNative=true` (host NDK tools
-are incompatible here). `.github/workflows/release.yml` rebuilds from the tag **with the native
-layer enabled**, so the published CI APK will have a different hash. **The `SHA256SUMS.txt`
-attached to the GitHub Release is authoritative** — always verify against that file, not the
-local reference value. Verify with `sha256sum -c SHA256SUMS.txt` from the directory containing
-the APKs.
+The `SHA256SUMS.txt` attached to the v0.0.2 release is authoritative and covers both APKs.
+The local reference APK in `dist/` was built with `-PskipNative=true` (host NDK tools are
+incompatible here), so its hash (`9137109826965c29d0954c7d0f26a027e920ce6d13f901073e5daf4badc029db`)
+differs from the CI build, which includes the native layer. Always verify downloaded APKs
+against the checksum file from the release:
 
-> **Publishing status:** v0.0.1 is live. v0.0.2 artifacts are staged locally in `dist/` and must
-> be published by a maintainer with credentials. No GitHub/Cloudflare token exists in this
-> environment, so no remote state was changed.
+```bash
+sha256sum -c SHA256SUMS.txt
+```
+
+> **Publishing status: live.** `v0.0.1` and `v0.0.2` are on GitHub Releases; the GitHub Pages
+> site is at <https://originlabs1.github.io/OriginAgent/>; the Cloudflare Pages project
+> `origin-agent-kit` serves <https://origin-agent-kit.coreconcept1.net> and
+> <https://origin-agent-kit.pages.dev>. GitHub Actions runs for release, build and Pages deploy
+> all completed successfully.
 
 ## Where we do **not** distribute (for now)
 

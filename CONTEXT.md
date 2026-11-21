@@ -27,7 +27,7 @@ foundation. The project is a **OneOrigin initiative**, hosted as
 | Repository | `OriginLabs1/OriginAgent` (public) |
 | License | MIT (see `LICENSE`) |
 | Local verification | `bash ./gradlew test -PskipNative=true` (32 tests green), `bash ./gradlew assembleRelease -PskipNative=true --max-workers=1 -Dorg.gradle.jvmargs=-Xmx640m` produced v0.0.2 minified, debug-signed APK (SHA-256 `9137109826965c29d0954c7d0f26a027e920ce6d13f901073e5daf4badc029db`), verified with `apkanalyzer` (`0.0.2`). Native layer disabled locally only because the downloaded NDK host tools are x86-64; CI builds it by default. |
-| Publishing | `v0.0.1` is live on GitHub Releases. `v0.0.2` artifacts are staged in `dist/`; publishing requires maintainer credentials (none in this environment). GitHub Pages is not yet enabled in repo settings; Cloudflare Pages project/domain not yet created. |
+| Publishing | **Live.** `v0.0.1` and `v0.0.2` are on GitHub Releases (v0.0.2 published APK SHA-256 `c2d2f1f258fa5936fce07168c35205cb2d3af52a41c4e9bca154f5042bc191b6`). GitHub Pages is enabled and serving at `https://originlabs1.github.io/OriginAgent/`. Cloudflare Pages project `origin-agent-kit` is deployed and serving `https://origin-agent-kit.coreconcept1.net` (custom domain active) and `https://origin-agent-kit.pages.dev`. Release, build and Pages workflows all succeeded. |
 
 ## 2. What is already decided (do not re-litigate without evidence)
 

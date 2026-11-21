@@ -4,36 +4,31 @@ A self-contained static site (HTML/CSS/vanilla JS, no build step, no external CD
 or trackers). All paths are relative, so `index.html` also works when opened
 directly from disk.
 
-## GitHub Pages
+## Live deployments
 
-1. In the repository settings, set **Settings → Pages → Source** to **GitHub Actions**.
-2. The included `.github/workflows/pages.yml` deploys `site/` on every push to
-   `main` and can also be run manually with `workflow_dispatch`.
-3. Permissions used: `contents: read`, `pages: write`, `id-token: write`.
-   No secrets are required.
+- **GitHub Pages:** <https://originlabs1.github.io/OriginAgent/> — Pages is enabled with the
+  **GitHub Actions** source, and `.github/workflows/pages.yml` deploys `site/` on every push to
+  `main` (also runnable via `workflow_dispatch`). Permissions: `contents: read`, `pages: write`,
+  `id-token: write`. No secrets required.
+- **Cloudflare Pages:** <https://origin-agent-kit.coreconcept1.net> and
+  <https://origin-agent-kit.pages.dev> — project `origin-agent-kit`, production branch `main`,
+  direct-upload deployment, output directory `site`. Root config: `wrangler.jsonc`.
 
-## Cloudflare Pages
+## Redeploying to Cloudflare Pages
 
-Project name: `origin-agent-kit`. Root config: `wrangler.jsonc` (build output
-`./site`).
-
-From the repository root:
+From the repository root, with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in the
+environment:
 
 ```sh
-npx wrangler pages deploy site --project-name origin-agent-kit
+npx wrangler pages deploy site --project-name origin-agent-kit --branch main
 ```
 
-Then attach the custom domain in the Cloudflare dashboard:
-**Workers & Pages → origin-agent-kit → Custom domains → Add custom domain →
-`origin-agent-kit.coreconcept1.net`**. Cloudflare will prompt for the DNS
-records needed; the domain must be in the same Cloudflare account. The domain
-binding is a dashboard step — it is not stored in this repository.
+The custom domain is bound to the project and the CNAME
+`origin-agent-kit.coreconcept1.net → origin-agent-kit.pages.dev` exists in the
+`coreconcept1.net` zone. Both are provider-side state, not repository files.
 
-For a connected Git integration instead of a direct upload, set the build
-command to empty/none and the build output directory to `site`.
-
-> No credentials or API tokens exist in this environment. Authentication for
-> either provider must be supplied by the maintainer at deploy time.
+> Never put API tokens in this repository or in these files. Provide credentials at deploy time
+> through the environment or your CI secrets store.
 
 ## Files
 
