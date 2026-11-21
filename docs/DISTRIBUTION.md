@@ -15,7 +15,7 @@
 
 | Version | Release | Published APK SHA-256 |
 |---|---|---|
-| v0.0.3 | **Ready to publish** (Aurora UI + four verified GGUF models) | local `-PskipNative=true` build: `c8c2cd3a029725fbfeaca4aa0226a779598ff931a17622f182f3d4a885b3afdd`. CI publishes a native-layer APK with a different hash; use the release's `SHA256SUMS.txt` as authoritative. |
+| v0.0.3 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.3> (Aurora UI + four verified GGUF models) | local `-PskipNative=true` build: `c8c2cd3a029725fbfeaca4aa0226a779598ff931a17622f182f3d4a885b3afdd`. The release's `SHA256SUMS.txt` is authoritative for the published native-layer APK. |
 | v0.0.2 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.2> | `c2d2f1f258fa5936fce07168c35205cb2d3af52a41c4e9bca154f5042bc191b6` |
 | v0.0.1 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.1> | `6e09a39aef75e156115ce58af15aa29a69aab8b2fccc896d890ced1818a58930` |
 
@@ -28,13 +28,12 @@ Always verify downloaded APKs against the checksum file from the release:
 sha256sum -c SHA256SUMS.txt
 ```
 
-> **Publishing status:** `v0.0.1` and `v0.0.2` are live. `v0.0.3` is built, tested and staged
-> in `dist/` but has not been pushed from this environment because no GitHub push credential
-> is available. The GitHub Pages site is at <https://originlabs1.github.io/OriginAgent/>;
-> the Cloudflare Pages project
-> `origin-agent-kit` serves <https://origin-agent-kit.coreconcept1.net> and
-> <https://origin-agent-kit.pages.dev>. GitHub Actions runs for release, build and Pages deploy
-> all completed successfully.
+> **Publishing status:** `v0.0.1`, `v0.0.2` and `v0.0.3` are pushed to GitHub, with `v0.0.3`
+> tagged for the release workflow. The GitHub Pages site is at
+> <https://originlabs1.github.io/OriginAgent/>; the Cloudflare Pages project `origin-agent-kit`
+> serves <https://origin-agent-kit.coreconcept1.net> and
+> <https://origin-agent-kit.pages.dev>. GitHub Actions builds, releases and Pages deploys run
+> from the repository.
 
 ## Where we do **not** distribute (for now)
 
@@ -50,18 +49,17 @@ sha256sum -c SHA256SUMS.txt
 5. Update F-Droid metadata with version, hash and commit.
 6. State in notes: local-first, no telemetry, web access opt-in, not on Google Play.
 
-## Publishing the staged v0.0.3 release
+## v0.0.3 publication record
 
 ```bash
-# from a machine with push credentials for OriginLabs1/OriginAgent
-git add . && git commit -m "Origin Agent v0.0.3 — Aurora interface reimplementation"
-git tag v0.0.3 && git push origin main --tags
+# Published from OriginLabs1/OriginAgent
+git tag v0.0.3 && git push origin v0.0.3
 # .github/workflows/release.yml builds the native APK and attaches it with SHA256SUMS.txt
+# .github/workflows/pages.yml deploys site/ to GitHub Pages
 
-# Website — GitHub Pages: enable Settings > Pages > Source: GitHub Actions, then push.
-# Website — Cloudflare Pages:
+# Website — Cloudflare Pages (same site/ directory):
 npx wrangler pages deploy site --project-name origin-agent-kit
-# Then attach origin-agent-kit.coreconcept1.net in the Cloudflare dashboard.
+# origin-agent-kit.coreconcept1.net is attached in the Cloudflare dashboard.
 ```
 
 ## Verification for users
