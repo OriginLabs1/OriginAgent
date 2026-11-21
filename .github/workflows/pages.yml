@@ -1,5 +1,4 @@
-# Deploys the static site in site/ to GitHub Pages.
-# Enable GitHub Pages first in repo settings: Settings > Pages > Source: "GitHub Actions".
+# Deploys the static site in site/ to the gh-pages branch for GitHub Pages.
 name: Deploy site to GitHub Pages
 
 on:
@@ -8,10 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: read
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: "pages"
@@ -19,22 +15,16 @@ concurrency:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
+      - name: Publish site to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          name: origin-pages
-          path: site
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-        with:
-          artifact_name: origin-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: "OriginLabs1"
+          user_email: "hello@oneorigin.example"
