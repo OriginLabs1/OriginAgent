@@ -15,7 +15,7 @@
 
 | Version | Release | Published APK SHA-256 |
 |---|---|---|
-| v0.0.3 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.3> (Aurora UI + four verified GGUF models) | local `-PskipNative=true` build: `c8c2cd3a029725fbfeaca4aa0226a779598ff931a17622f182f3d4a885b3afdd`. The release's `SHA256SUMS.txt` is authoritative for the published native-layer APK. |
+| v0.0.3 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.3> (Aurora UI + four verified GGUF models) | published CI build: `ce0238e94c59423e9d45d344353c927da573c10707653d1f59915cd4504f665c`. The local reference APK in `dist/` is `c8c2cd3a029725fbfeaca4aa0226a779598ff931a17622f182f3d4a885b3afdd`; the release's `SHA256SUMS.txt` is authoritative for downloads. |
 | v0.0.2 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.2> | `c2d2f1f258fa5936fce07168c35205cb2d3af52a41c4e9bca154f5042bc191b6` |
 | v0.0.1 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.1> | `6e09a39aef75e156115ce58af15aa29a69aab8b2fccc896d890ced1818a58930` |
 

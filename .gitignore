@@ -37,8 +37,9 @@ models/downloads/
 /tmp/
 .kotlin/
 
-# Browser automation scratch (not app source)
+# Browser / deploy tool scratch (not app source)
 node_modules/
+.wrangler/
 
 # Local workspace metadata (not app source)
 .origin/

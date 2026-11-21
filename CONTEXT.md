@@ -27,7 +27,7 @@ foundation. The project is a **OneOrigin initiative**, hosted as
 | Repository | `OriginLabs1/OriginAgent` (public) |
 | License | MIT (see `LICENSE`) |
 | Local verification | `bash ./gradlew test assembleRelease -PskipNative=true --offline --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx640m` green: 41 JVM tests, minified debug-signed APK as version `0.0.3` / code `3`, with bundled arm64 llama.cpp libraries; SHA-256 `c8c2cd3a029725fbfeaca4aa0226a779598ff931a17622f182f3d4a885b3afdd`. Native in-repo tools disabled locally because the downloaded NDK host tools are x86-64; CI builds them by default. |
-| Publishing | `v0.0.1` and `v0.0.2` remain live on GitHub Releases (v0.0.2 published SHA-256 `c2d2f1f258fa5936fce07168c35205cb2d3af52a41c4e9bca154f5042bc191b6`). `v0.0.3` is pushed to `main` and tagged; the release workflow publishes the APK and checksums. GitHub Pages is live at `https://originlabs1.github.io/OriginAgent/`. Cloudflare Pages serves `origin-agent-kit.coreconcept1.net` / `origin-agent-kit.pages.dev`. |
+| Publishing | `v0.0.1` and `v0.0.2` remain live on GitHub Releases (v0.0.2 published SHA-256 `c2d2f1f258fa5936fce07168c35205cb2d3af52a41c4e9bca154f5042bc191b6`). `v0.0.3` is pushed, tagged and released; published APK SHA-256 `ce0238e94c59423e9d45d344353c927da573c10707653d1f59915cd4504f665c` (the local reference build is `c8c2cd3a029725fbfeaca4aa0226a779598ff931a17622f182f3d4a885b3afdd`). GitHub Pages is live at `https://originlabs1.github.io/OriginAgent/`. Cloudflare Pages serves `origin-agent-kit.coreconcept1.net` / `origin-agent-kit.pages.dev`. |
 
 ## 2. What is already decided (do not re-litigate without evidence)
 
