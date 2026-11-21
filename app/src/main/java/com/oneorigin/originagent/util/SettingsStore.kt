@@ -30,12 +30,18 @@ class SettingsStore(context: Context) {
         get() = prefs.getString("engine", "local.deterministic") ?: "local.deterministic"
         set(value) = prefs.edit { putString("engine", value) }
 
+    /** Web access is possible and enabled by default; the user can switch it off at any time. */
+    var webAccessEnabled: Boolean
+        get() = prefs.getBoolean("web_access", true)
+        set(value) = prefs.edit { putBoolean("web_access", value) }
+
     fun asMap(): Map<String, Any?> = mapOf(
         "type" to "preferences",
         "theme" to themeMode.name,
         "dynamicColor" to dynamicColor,
         "reducedMotion" to reducedMotion,
         "autoApproveLowRisk" to autoApproveLowRisk,
-        "preferredEngineId" to preferredEngineId
+        "preferredEngineId" to preferredEngineId,
+        "webAccessEnabled" to webAccessEnabled
     )
 }

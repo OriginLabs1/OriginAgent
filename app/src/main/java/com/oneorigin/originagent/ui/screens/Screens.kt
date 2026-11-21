@@ -2,7 +2,10 @@ package com.oneorigin.originagent.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
@@ -33,6 +37,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -47,11 +52,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.oneorigin.originagent.domain.MemoryEntry
 import com.oneorigin.originagent.domain.ProvenanceRecord
-import com.oneorigin.originagent.models.InferenceEngine
+import com.oneorigin.originagent.models.AdapterTemplates
+import com.oneorigin.originagent.models.ModelCatalog
+import com.oneorigin.originagent.models.ModelDescriptor
 import com.oneorigin.originagent.tools.Tool
 import com.oneorigin.originagent.ui.AgentUiState
 import com.oneorigin.originagent.ui.components.AmbientOrb
@@ -70,7 +78,11 @@ private val SUGGESTIONS = listOf(
 )
 
 @Composable
-fun OriginScreen(ui: AgentUiState, onSend: (String) -> Unit) {
+fun OriginScreen(
+    ui: AgentUiState,
+    onSend: (String) -> Unit,
+    onOpenModelPicker: () -> Unit
+) {
     var draft by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
@@ -103,10 +115,22 @@ fun OriginScreen(ui: AgentUiState, onSend: (String) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
-                StatusPill(ui.engineLabel, MaterialTheme.colorScheme.primary)
                 StatusPill(if (ui.chainValid) "Chain verified" else "Chain alert", if (ui.chainValid) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error)
                 StatusPill(ui.nativeLabel, MaterialTheme.colorScheme.secondary)
             }
+            Spacer(Modifier.height(8.dp))
+            FilterChip(
+                selected = true,
+                onClick = onOpenModelPicker,
+                leadingIcon = {
+                    Icon(
+                        Icons.Filled.AutoAwesome,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                },
+                label = { Text("Model: ${ui.engineLabel}  ·  change") }
+            )
         }
 
         SuggestionRow(SUGGESTIONS) { onSend(it) }
@@ -163,9 +187,11 @@ fun OriginScreen(ui: AgentUiState, onSend: (String) -> Unit) {
 @Composable
 fun CapabilitiesScreen(
     tools: List<Tool>,
-    engines: List<InferenceEngine>,
-    activeEngineId: String,
-    onSelectEngine: (String) -> Unit
+    models: List<ModelDescriptor>,
+    activeModelId: String,
+    availability: (String) -> Boolean,
+    onSelectModel: (String) -> Unit,
+    onOpenModelPicker: () -> Unit
 ) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)) {
         item {
@@ -195,43 +221,285 @@ fun CapabilitiesScreen(
         }
         item {
             Spacer(Modifier.height(20.dp))
-            Text("Intelligence engines", style = MaterialTheme.typography.headlineMedium)
+            Text("Models", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "Candidates, never dependencies. No model weights are bundled.",
+                "The picker shows the real serving model, provider, capabilities and status. Candidates are never dependencies.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
+            Button(onClick = onOpenModelPicker, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(8.dp))
+                Text("Open universal model picker")
+            }
+            Spacer(Modifier.height(8.dp))
         }
-        items(engines, key = { it.id }) { engine ->
+        items(models, key = { it.id }) { model ->
             Card(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                 Column(Modifier.padding(16.dp)) {
-                    Text(engine.displayName, style = MaterialTheme.typography.titleMedium)
-                    Text(engine.description, style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AssistChip(
-                            onClick = { onSelectEngine(engine.id) },
-                            enabled = engine.isAvailable(),
-                            label = {
-                                Text(
-                                    when {
-                                        engine.id == activeEngineId -> "Active"
-                                        engine.isAvailable() -> "Select"
-                                        else -> "Not installed"
-                                    }
-                                )
-                            }
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(model.displayName, style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f))
                         StatusPill(
-                            if (engine.isAvailable()) "available" else "optional",
-                            if (engine.isAvailable()) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+                            if (model.id == activeModelId) "Active" else model.kindLabel,
+                            if (model.id == activeModelId) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.secondary
                         )
                     }
+                    Text("${model.provider} · ${model.modelName}", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(model.limitations, style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(8.dp))
+                    AssistChip(
+                        onClick = { onSelectModel(model.id) },
+                        enabled = availability(model.id) || model.id == ModelCatalog.LOCAL.id,
+                        label = {
+                            Text(
+                                when {
+                                    model.id == activeModelId -> "Active"
+                                    availability(model.id) -> "Use this model"
+                                    else -> "Not available yet"
+                                }
+                            )
+                        }
+                    )
                 }
             }
         }
     }
+}
+
+/** The v0.0.2 universal model picker. Selection never clears the conversation. */
+@Composable
+fun ModelPickerDialog(
+    models: List<ModelDescriptor>,
+    selectedId: String,
+    statuses: Map<String, String>,
+    availability: (String) -> Boolean,
+    onSelect: (String) -> Unit,
+    onCheck: (String) -> Unit,
+    onConfigure: (String) -> Unit,
+    onClear: (String) -> Unit,
+    onAddAdapter: () -> Unit,
+    onRemoveAdapter: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Models & adapters") },
+        text = {
+            Column {
+                Text(
+                    "The model chip in chat always shows who is actually answering. Switching keeps your conversation and its provenance intact.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = onAddAdapter, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(8.dp))
+                    Text("Add adapter")
+                }
+                Spacer(Modifier.height(10.dp))
+                LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                    items(models, key = { it.id }) { model ->
+                        Card(
+                            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(Modifier.padding(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(model.displayName, style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.weight(1f))
+                                    StatusPill(
+                                        if (model.id == selectedId) "Active" else model.kindLabel,
+                                        if (model.id == selectedId) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                                Text("${model.provider} · ${model.modelName}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.height(4.dp))
+                                Text(model.description, style = MaterialTheme.typography.bodySmall)
+                                Text("Capabilities: ${model.capabilities.joinToString(", ")}",
+                                    style = MaterialTheme.typography.labelSmall)
+                                Text("Limits: ${model.limitations}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                val status = statuses[model.id]
+                                if (!status.isNullOrBlank()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(status, style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary)
+                                }
+                                Spacer(Modifier.height(10.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Button(
+                                        onClick = { onSelect(model.id) },
+                                        enabled = availability(model.id) || model.id == ModelCatalog.LOCAL.id
+                                    ) {
+                                        Text(if (model.id == selectedId) "Active" else "Use")
+                                    }
+                                    if (model.isRemote) {
+                                        OutlinedButton(onClick = { onCheck(model.id) }) { Text("Test") }
+                                        TextButton(onClick = { onConfigure(model.id) }) { Text("Configure") }
+                                        if (statuses.containsKey(model.id)) {
+                                            TextButton(onClick = { onClear(model.id) }) { Text("Clear") }
+                                        }
+                                        if (model.id.startsWith("adapter.")) {
+                                            TextButton(onClick = { onRemoveAdapter(model.id) }) { Text("Remove") }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } }
+    )
+}
+
+/** Add a web adapter from a built-in template or a custom endpoint. */
+@Composable
+fun AddAdapterDialog(
+    templateId: String,
+    label: String,
+    endpoint: String,
+    modelName: String,
+    apiKey: String,
+    onTemplate: (String) -> Unit,
+    onLabel: (String) -> Unit,
+    onEndpoint: (String) -> Unit,
+    onModelName: (String) -> Unit,
+    onApiKey: (String) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add adapter") },
+        text = {
+            Column {
+                Text(
+                    "Start from a built-in web adapter template or bring your own endpoint. Web access is toggled in Settings.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("Templates", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    AdapterTemplates.ALL.forEach { template ->
+                        FilterChip(
+                            selected = templateId == template.id,
+                            onClick = { onTemplate(template.id) },
+                            label = { Text(template.label) }
+                        )
+                    }
+                }
+                AdapterTemplates.byId(templateId)?.let { template ->
+                    Spacer(Modifier.height(4.dp))
+                    Text(template.note, style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = label, onValueChange = onLabel,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Adapter name") }, singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = endpoint, onValueChange = onEndpoint,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Endpoint base URL (include /v1)") },
+                    placeholder = { Text("https://api.example.com/v1") }, singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = modelName, onValueChange = onModelName,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Model name") }, singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = apiKey, onValueChange = onApiKey,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("API key (optional)") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onSave) { Text("Add") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+/** User-controlled endpoint, model name and credential. Nothing is sent until saved. */
+@Composable
+fun RemoteConfigDialog(
+    model: ModelDescriptor,
+    endpoint: String,
+    modelName: String,
+    apiKey: String,
+    onEndpoint: (String) -> Unit,
+    onModelName: (String) -> Unit,
+    onApiKey: (String) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Configure ${model.displayName}") },
+        text = {
+            Column {
+                Text(
+                    "Use a documented OpenAI-compatible /v1 endpoint you trust. Details stay on this device and credentials are masked in exports.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = endpoint,
+                    onValueChange = onEndpoint,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Endpoint base URL (include /v1)") },
+                    placeholder = { Text("https://api.example.com/v1") },
+                    singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = modelName,
+                    onValueChange = onModelName,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Model name sent to the endpoint") },
+                    singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = apiKey,
+                    onValueChange = onApiKey,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("API key${if (model.requiresApiKey) " (required)" else " (optional)"}") },
+                    placeholder = { Text("Leave blank to keep the saved key") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onSave) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
 
 @Composable
@@ -343,7 +611,8 @@ fun TrustScreen(records: List<ProvenanceRecord>, chainValid: Boolean) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(ui: AgentUiState, onTheme: (ThemeMode) -> Unit, onDynamic: (Boolean) -> Unit,
-                    onMotion: (Boolean) -> Unit, onLowRisk: (Boolean) -> Unit) {
+                    onMotion: (Boolean) -> Unit, onLowRisk: (Boolean) -> Unit,
+                    onWebAccess: (Boolean) -> Unit) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)) {
         item {
             Text("Settings", style = MaterialTheme.typography.headlineMedium)
@@ -365,15 +634,25 @@ fun SettingsScreen(ui: AgentUiState, onTheme: (ThemeMode) -> Unit, onDynamic: (B
             SettingSwitch("Reduce motion", ui.reducedMotion, onMotion)
             SettingSwitch("Auto-approve low-risk local tools", ui.autoApproveLowRisk, onLowRisk)
             Spacer(Modifier.height(16.dp))
+            Text("Connections", style = MaterialTheme.typography.titleMedium)
+            SettingSwitch("Web access (for web adapters)", ui.webAccessEnabled, onWebAccess)
+            Spacer(Modifier.height(16.dp))
             Text("Privacy & distribution", style = MaterialTheme.typography.titleMedium)
             Text(
-                "No INTERNET permission. No telemetry. Distributed via GitHub Releases, not the Google Play Store.",
+                "No telemetry. Local by default. Network is used only for a remote model you explicitly select and configure. Distributed via GitHub Releases, not the Google Play Store.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(16.dp))
+            Text("Models", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Choose and configure models in the picker. Network access is used only for a remote model you select; credentials are masked in exports.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(16.dp))
             Text("About", style = MaterialTheme.typography.titleMedium)
-            Text("Origin Agent v0.0.1 · OneOrigin initiative", style = MaterialTheme.typography.bodyMedium)
+            Text("Origin Agent v0.0.2 · OneOrigin initiative", style = MaterialTheme.typography.bodyMedium)
             Text("Universal intelligence. Trustworthy execution. Human empowerment.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)

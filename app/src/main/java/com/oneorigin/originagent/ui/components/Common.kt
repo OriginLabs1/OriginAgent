@@ -141,12 +141,20 @@ fun MessageBubble(message: ChatMessage, modifier: Modifier = Modifier) {
         ) {
             Column(Modifier.padding(16.dp)) {
                 Text(message.text, style = MaterialTheme.typography.bodyLarge)
+                if (!message.isUser && message.engineLabel.isNotEmpty()) {
+                    Text(
+                        "Answered by ${message.engineLabel}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = content.copy(alpha = 0.75f),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
                 if (!message.isUser && message.status.isNotEmpty()) {
                     Text(
                         message.status,
                         style = MaterialTheme.typography.labelSmall,
                         color = content.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }

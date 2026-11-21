@@ -17,9 +17,9 @@ Description: |
 RepoType: git
 Repo: https://github.com/OriginLabs1/OriginAgent.git
 Builds:
-  - versionName: 0.0.1
-    versionCode: 1
-    commit: v0.0.1
+  - versionName: 0.0.2
+    versionCode: 2
+    commit: v0.0.2
     gradle:
       - app
     subdir: app
@@ -28,5 +28,5 @@ Builds:
       - gradle/wrapper/gradle-wrapper.jar
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.0.1
-CurrentVersionCode: 1
+CurrentVersion: 0.0.2
+CurrentVersionCode: 2

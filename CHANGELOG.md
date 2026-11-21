@@ -12,6 +12,34 @@ constitution's foundational version `0.0.1` until the first usable native releas
 ### Fixed
 - _Nothing yet._
 
+## [0.0.2] - 2026-11-21
+
+### Added
+- **Universal model picker.** Models are grouped by provider with real capabilities,
+  limitations, kind and connection status. The active model is shown in chat and on every
+  assistant answer; switching never clears the conversation.
+- **Add adapter.** Built-in web adapter templates (OpenAI, OpenRouter, Groq, Together,
+  DeepSeek, Ollama, LM Studio, custom) plus fully user-added OpenAI-compatible endpoints.
+  Adapters are managed in the picker, not hard-coded.
+- **Web access.** Network use is possible and enabled by default, gated by a Settings switch.
+  No request is made unless the user selects a web adapter; local models remain fully offline.
+- Real OpenAI-compatible adapter (`/chat/completions` and `/models`) with explicit connection
+  testing, timeouts and typed failures. No simulated model identity or silent misattribution.
+- Credentials and endpoints stored locally; API keys masked in JSON exports.
+- Static product website in `site/` for GitHub Pages and Cloudflare Pages
+  (`origin-agent-kit`), modeled on the OpenDuet landing page with Origin branding.
+- JVM tests for model catalog integrity, built-in adapter templates and OpenAI-compatible
+  request/response parsing.
+
+### Changed
+- `versionCode` 2 / `versionName` 0.0.2; Settings and Capabilities updated for model control.
+- Manifest declares INTERNET with a network security config that permits cleartext only for
+  local model servers (localhost, 127.0.0.1, emulator host).
+- Local release builds with `-PskipNative=true` no longer invoke host NDK symbol tools.
+
+### Fixed
+- Release builds no longer attempt native symbol extraction when the native layer is skipped.
+
 ## [0.0.1] - 2026-11-20
 
 ### Added

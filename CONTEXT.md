@@ -17,17 +17,17 @@ foundation. The project is a **OneOrigin initiative**, hosted as
 
 | Field | Value |
 |---|---|
-| Phase | 0.0.1 — foundational implementation |
-| Version | `0.0.1` |
+| Phase | 0.0.2 — model choice and interaction maturity |
+| Version | `0.0.2` |
 | Product form | Native Android app (Kotlin + Jetpack Compose, Material 3 Expressive). **Not a PWA.** |
 | Reference device | Samsung Galaxy S9 — Snapdragon 845, 4 GB RAM, Android 10 |
 | Minimum device | Android 8.0 (API 26), ARM64 or x86-64, 4 GB RAM target |
 | Intelligence | Offline-first. Deterministic native tools + optional interchangeable inference engines. |
-| Distribution | GitHub source, GitHub Releases APK, F-Droid-ready metadata. **No Google Play Store for now.** |
+| Distribution | GitHub source, GitHub Releases APK, GitHub Pages website (`site/`), Cloudflare Pages project `origin-agent-kit` (`origin-agent-kit.coreconcept1.net`), F-Droid-ready metadata. **No Google Play Store for now.** |
 | Repository | `OriginLabs1/OriginAgent` (public) |
 | License | MIT (see `LICENSE`) |
-| Local verification | `bash ./gradlew test` (15 tests), `bash ./gradlew lint` (0 errors), `bash ./gradlew assembleRelease -PskipNative=true` produced a minified, debug-signed APK (SHA-256 `6e09a39aef75e156115ce58af15aa29a69aab8b2fccc896d890ced1818a58930`), verified with `apksigner`. Native layer disabled locally only because the downloaded NDK host tools are x86-64; CI builds it by default. |
-| Publishing | Source published at `OriginLabs1/OriginAgent`; release `v0.0.1` published on GitHub Releases with APK and `SHA256SUMS.txt`. No Play Store listing. |
+| Local verification | `bash ./gradlew test -PskipNative=true` (32 tests green), `bash ./gradlew assembleRelease -PskipNative=true --max-workers=1 -Dorg.gradle.jvmargs=-Xmx640m` produced v0.0.2 minified, debug-signed APK (SHA-256 `9137109826965c29d0954c7d0f26a027e920ce6d13f901073e5daf4badc029db`), verified with `apkanalyzer` (`0.0.2`). Native layer disabled locally only because the downloaded NDK host tools are x86-64; CI builds it by default. |
+| Publishing | `v0.0.1` is live on GitHub Releases. `v0.0.2` artifacts are staged in `dist/`; publishing requires maintainer credentials (none in this environment). GitHub Pages is not yet enabled in repo settings; Cloudflare Pages project/domain not yet created. |
 
 ## 2. What is already decided (do not re-litigate without evidence)
 
@@ -39,7 +39,8 @@ foundation. The project is a **OneOrigin initiative**, hosted as
 6. **Sovereignty.** Local-by-default storage, user-controlled memory, portable JSON export, no mandatory account/cloud/subscription.
 7. **Small foundation.** C/C++ for sovereignty-critical native primitives; Kotlin for the native Android UI and orchestration; optional Rust/Zig integrations only with demonstrable benefit.
 8. **Evidence over claims.** Models, runtimes and architectures enter the registry with benchmarks; none earns permanent preference.
-9. **No Play Store for now.** Distribute via GitHub Releases and reproducible source builds.
+9. **No Play Store for now.** Distribute via GitHub Releases, GitHub Pages, Cloudflare Pages and reproducible source builds.
+10. **Web access is optional and enabled by default.** Adapters are not limited to user-supplied endpoints: built-in web templates and added adapters are first-class, but no network request happens without a selected web adapter and the Settings switch.
 
 ## 3. Architectural map
 

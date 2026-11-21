@@ -47,3 +47,22 @@ task suite, quality score, peak RSS, TTFT, tokens/s, energy observation and lice
 - [ ] Harness fallback to deterministic engine tested.
 - [ ] Benchmark entry added with command and hardware.
 - [ ] UI capability text describes trade-offs honestly.
+
+## 6. Web adapters (v0.0.2)
+
+The picker is not limited to user-supplied local weights. It offers two legitimate paths:
+
+1. **Built-in web adapter templates** — OpenAI, OpenRouter, Groq, Together, DeepSeek, Ollama
+   and LM Studio. Each prefills a documented OpenAI-compatible `/v1` endpoint and model name.
+2. **Added adapters** — "Add adapter" accepts any documented OpenAI-compatible endpoint the
+   user trusts. Added adapters are stored locally and are removable from the picker.
+
+Web access is **possible and enabled by default** but controlled by the Settings switch
+`Web access (for web adapters)`. No network request occurs until a web adapter is selected,
+and the harness attributes each answer to the exact configured model name. `Test` calls
+`GET {endpoint}/models`; generation calls `POST {endpoint}/chat/completions`. Failures are
+reported as typed errors and fall back to the deterministic local engine without misattribution.
+
+Credentials and endpoints stay on the device. JSON exports contain endpoints and model names
+but mask API keys. Local adapters (bitnet.cpp / llama.cpp) still require user-supplied weights
+and a compiled native bridge; they never claim availability without one.

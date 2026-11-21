@@ -16,8 +16,8 @@ android {
         applicationId = "com.oneorigin.originagent"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.0.1"
+        versionCode = 2
+        versionName = "0.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -82,6 +82,9 @@ android {
 // do not invoke them for stripping third-party .so files either.
 if (skipNative) {
     tasks.matching { it.name.contains("strip") && it.name.contains("DebugSymbols") }
+        .configureEach { enabled = false }
+    // This task invokes host NDK tools even when no native libraries are built locally.
+    tasks.matching { it.name.startsWith("extract") && it.name.contains("NativeSymbolTables") }
         .configureEach { enabled = false }
 }
 

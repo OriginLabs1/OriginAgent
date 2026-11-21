@@ -8,9 +8,10 @@ Evidence-gated, not date-gated. See `SPECS.md §2` for exit criteria.
 | 1 | Lightweight harness | Done | 15 JVM tests green, offline pipeline verified |
 | 2 | Native C/C++ foundation | In progress | JNI sources complete; Kotlin fallback verified; CI build in progress |
 | 3 | Material 3 Expressive UI | In progress | Screens implemented; phone/tablet device smoke still pending |
-| 4 | Model adapters + benchmarks | Planned | Evidence log populated; no weights bundled |
-| 5 | GitHub Releases distribution | Done | `v0.0.1` APK + checksums published; no Play Store |
-| 6 | Linux/desktop + distributed research | Planned | Shared harness runs off-device |
+| 4 | Model adapters + benchmarks | In progress | Web adapters + picker shipped in 0.0.2; native bridges and evidence log still pending |
+| 5 | GitHub Releases distribution | Done | `v0.0.1` and staged `v0.0.2` APKs + checksums; no Play Store |
+| 6 | GitHub Pages + Cloudflare Pages | Staged | `site/` ready; enable Pages and attach `origin-agent-kit.coreconcept1.net` |
+| 7 | Linux/desktop + distributed research | Planned | Shared harness runs off-device |
 
 ## Long horizon
 

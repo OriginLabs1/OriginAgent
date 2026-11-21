@@ -1,0 +1,9 @@
+{
+  // Cloudflare Pages project for the static Origin Agent marketing site.
+  // NOTE: the custom domain origin-agent-kit.coreconcept1.net must be attached
+  // manually in the Cloudflare dashboard (Workers & Pages > origin-agent-kit >
+  // Custom domains). No credentials or secrets belong in this file.
+  "name": "origin-agent-kit",
+  "pages_build_output_dir": "./site",
+  "compatibility_date": "2026-11-21"
+}

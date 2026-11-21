@@ -44,9 +44,12 @@ import com.oneorigin.originagent.domain.MemoryEntry
 import com.oneorigin.originagent.domain.ProvenanceRecord
 import com.oneorigin.originagent.ui.AgentUiState
 import com.oneorigin.originagent.ui.AgentViewModel
+import com.oneorigin.originagent.ui.screens.AddAdapterDialog
 import com.oneorigin.originagent.ui.screens.CapabilitiesScreen
 import com.oneorigin.originagent.ui.screens.MemoryScreen
+import com.oneorigin.originagent.ui.screens.ModelPickerDialog
 import com.oneorigin.originagent.ui.screens.OriginScreen
+import com.oneorigin.originagent.ui.screens.RemoteConfigDialog
 import com.oneorigin.originagent.ui.screens.SettingsScreen
 import com.oneorigin.originagent.ui.screens.TrustScreen
 import com.oneorigin.originagent.ui.theme.OriginTheme
@@ -132,13 +135,21 @@ private fun OriginAgentApp(vm: AgentViewModel) {
             startDestination = "origin",
             modifier = Modifier.padding(padding)
         ) {
-            composable("origin") { OriginScreen(ui = ui, onSend = vm::send) }
+            composable("origin") {
+                OriginScreen(
+                    ui = ui,
+                    onSend = vm::send,
+                    onOpenModelPicker = vm::openModelPicker
+                )
+            }
             composable("capabilities") {
                 CapabilitiesScreen(
                     tools = vm.capabilities(),
-                    engines = vm.engines(),
-                    activeEngineId = vm.ui.value.engineLabel,
-                    onSelectEngine = { vm.selectEngine(it); vm.refreshStatus() }
+                    models = ui.models,
+                    activeModelId = ui.selectedModelId,
+                    availability = vm::isModelAvailable,
+                    onSelectModel = { vm.selectModel(it) },
+                    onOpenModelPicker = vm::openModelPicker
                 )
             }
             composable("memory") {
@@ -164,7 +175,8 @@ private fun OriginAgentApp(vm: AgentViewModel) {
                     onTheme = vm::setTheme,
                     onDynamic = vm::setDynamicColor,
                     onMotion = vm::setReducedMotion,
-                    onLowRisk = vm::setAutoApproveLowRisk
+                    onLowRisk = vm::setAutoApproveLowRisk,
+                    onWebAccess = vm::setWebAccess
                 )
             }
         }
@@ -177,6 +189,54 @@ private fun OriginAgentApp(vm: AgentViewModel) {
             text = { Text(detail) },
             confirmButton = { TextButton(onClick = { vm.respondConsent(true) }) { Text("Approve") } },
             dismissButton = { TextButton(onClick = { vm.respondConsent(false) }) { Text("Decline") } }
+        )
+    }
+
+    if (ui.modelPickerOpen) {
+        ModelPickerDialog(
+            models = ui.models,
+            selectedId = ui.selectedModelId,
+            statuses = ui.modelStatuses,
+            availability = vm::isModelAvailable,
+            onSelect = { vm.selectModel(it) },
+            onCheck = { vm.checkModel(it) },
+            onConfigure = { vm.openModelConfig(it) },
+            onClear = { vm.clearModelConfig(it) },
+            onAddAdapter = vm::openAddAdapter,
+            onRemoveAdapter = { vm.removeAdapter(it) },
+            onDismiss = vm::closeModelPicker
+        )
+    }
+
+    if (ui.addAdapterOpen) {
+        AddAdapterDialog(
+            templateId = ui.adapterTemplateId,
+            label = ui.newAdapterLabel,
+            endpoint = ui.newAdapterEndpoint,
+            modelName = ui.newAdapterModel,
+            apiKey = ui.newAdapterKey,
+            onTemplate = vm::applyAdapterTemplate,
+            onLabel = vm::setNewAdapterLabel,
+            onEndpoint = vm::setNewAdapterEndpoint,
+            onModelName = vm::setNewAdapterModel,
+            onApiKey = vm::setNewAdapterKey,
+            onSave = vm::addAdapter,
+            onDismiss = vm::closeAddAdapter
+        )
+    }
+
+    val configuringModel = ui.models.firstOrNull { it.id == ui.configuringModelId }
+    if (configuringModel != null) {
+        RemoteConfigDialog(
+            model = configuringModel,
+            endpoint = ui.configEndpoint,
+            modelName = ui.configModelName,
+            apiKey = ui.configApiKey,
+            onEndpoint = vm::setConfigEndpoint,
+            onModelName = vm::setConfigModelName,
+            onApiKey = vm::setConfigApiKey,
+            onSave = vm::saveModelConfig,
+            onDismiss = vm::closeModelConfig
         )
     }
 }

@@ -18,16 +18,18 @@ import com.oneorigin.originagent.tools.NotesSearchTool
 import com.oneorigin.originagent.tools.SystemStatusTool
 import com.oneorigin.originagent.tools.ToolRegistry
 import com.oneorigin.originagent.util.NativeBridge
+import com.oneorigin.originagent.util.RemoteModelConfigStore
 import com.oneorigin.originagent.util.SettingsStore
 
 /** Composition root. Everything is local, explicit and replaceable. */
 class OriginAgentApplication : Application() {
 
     val settings: SettingsStore by lazy { SettingsStore(this) }
+    val remoteModels: RemoteModelConfigStore by lazy { RemoteModelConfigStore(this) }
     val memory: MemoryStore by lazy { MemoryStore(filesDir) }
     val ledger: ProvenanceLedger by lazy { ProvenanceLedger(filesDir) }
     val knowledge: KnowledgeBase by lazy { KnowledgeBase() }
-    val models: ModelRegistry by lazy { ModelRegistry(settings) }
+    val models: ModelRegistry by lazy { ModelRegistry(settings, remoteModels) }
     val nativeBridge: NativeBridge get() = NativeBridge
 
     val tools: ToolRegistry by lazy {

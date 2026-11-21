@@ -35,7 +35,9 @@ offline, keeps your data on your device, and treats trust as an execution proper
 
 | Channel | Status |
 |---|---|
-| [GitHub Releases](https://github.com/OriginLabs1/OriginAgent/releases) | Primary APK distribution |
+| [GitHub Releases](https://github.com/OriginLabs1/OriginAgent/releases) | Primary APK distribution (`v0.0.1`, `v0.0.2`) |
+| [GitHub Pages website](https://originlabs1.github.io/OriginAgent/) | Static site from [`site/`](site/) (enable Pages in repo settings) |
+| [Cloudflare Pages](https://origin-agent-kit.coreconcept1.net) | `origin-agent-kit` project; custom domain to be attached in Cloudflare |
 | Build from source | `bash ./gradlew assembleRelease` |
 | F-Droid | Metadata in [`metadata/`](metadata/) — submission-ready |
 | Google Play Store | **Not distributed (by design, for now)** |
@@ -43,13 +45,18 @@ offline, keeps your data on your device, and treats trust as an execution proper
 > Install an APK from a source you trust. Verify the SHA-256 in the release notes before installing.
 > Origin Agent requests no unnecessary permissions and contains no ads, analytics or proprietary SDKs.
 
-## What's inside (v0.0.1)
+## What's inside (v0.0.2)
 
-- **Origin** — conversational home with suggestions, honest engine status and live trust badges.
-- **Capabilities** — tool catalog, consent controls and the model registry with availability truth.
-- **Memory** — searchable local notes and facts, one-tap JSON export, clear-with-confirmation.
+- **Origin** — conversational home with suggestions, live trust badges and a model chip showing the model actually answering.
+- **Universal model picker** — provider, capabilities, limitations and connection status; switching models keeps the conversation.
+- **Add adapter** — built-in web adapter templates (OpenAI, OpenRouter, Groq, Together, DeepSeek, Ollama, LM Studio) and any custom OpenAI-compatible `/v1` endpoint.
+- **Web access** — possible and enabled by default, with a Settings switch. No network call is made unless you select a web adapter; local models stay offline.
+- **Capabilities** — tool catalog, consent controls and an honest model registry.
+- **Memory** — searchable local notes and facts, one-tap JSON export (credentials masked), clear-with-confirmation.
 - **Trust** — execution timeline, authorization ledger and offline provenance-chain verification.
-- **Settings** — theme, dynamic color, reduced motion and about/legal information.
+- **Settings** — theme, dynamic color, reduced motion, web access and about/legal information.
+
+The v0.0.1 foundation (harness, tools, memory, provenance, Material 3 UI) remains intact.
 
 ## Architecture at a glance
 
@@ -82,7 +89,9 @@ On hosts where the downloaded NDK tools cannot run (for example aarch64 Linux), 
 remains fully functional; CI and releases build the native layer normally.
 
 No model weights are downloaded or bundled by the build. Add engines only through the
-documented adapters in [`docs/MODEL_REGISTRY.md`](docs/MODEL_REGISTRY.md).
+documented adapters in [`docs/MODEL_REGISTRY.md`](docs/MODEL_REGISTRY.md). Web adapters use
+documented OpenAI-compatible endpoints; an INTERNET permission is present but all network use
+is gated by the in-app Web access switch and an explicitly selected web adapter.
 
 ## Governance
 
