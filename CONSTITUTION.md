@@ -132,8 +132,10 @@ Maintain an evolving technology registry with candidates, benchmark evidence, co
 
 Support interchangeable inference engines, including:
 
-- llama.cpp. (Default but optional)
-- bitnet.cpp. (Default and most recommended)
+- llama.cpp. (Default on Android: a maintained AAR runs the shipped Q4_K_M and TQ1_0 GGUFs.)
+- bitnet.cpp. (Strategic research target, not an Android default: upstream ships no AAR/JNI,
+  and its I2_S/TL1/TL2 formats are not interchangeable with llama.cpp's TQ1_0. Enter the
+  product only after Android NDK/JNI support, correctness checks and on-device evidence.)
 - Other suitable native and emerging runtimes.
 
 Do not force incompatible models into unsuitable execution engines.

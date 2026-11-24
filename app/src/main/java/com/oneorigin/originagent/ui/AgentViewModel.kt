@@ -1,6 +1,8 @@
 package com.oneorigin.originagent.ui
 
+import android.app.ActivityManager
 import android.app.Application
+import android.net.Uri
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
@@ -11,15 +13,26 @@ import com.oneorigin.originagent.domain.Intent
 import com.oneorigin.originagent.domain.ExecutionStatus
 import com.oneorigin.originagent.domain.IntentSource
 import com.oneorigin.originagent.domain.PlanStep
+import com.oneorigin.originagent.duet.DuetChannel
+import com.oneorigin.originagent.duet.DuetPage
+import com.oneorigin.originagent.duet.DuetPageKind
+import com.oneorigin.originagent.duet.DuetStore
+import com.oneorigin.originagent.duet.DuetTask
+import com.oneorigin.originagent.duet.DuetTaskStatus
+import com.oneorigin.originagent.duet.templateFor
 import com.oneorigin.originagent.models.AdapterTemplates
+import com.oneorigin.originagent.models.DeviceMemory
 import com.oneorigin.originagent.models.ModelCatalog
 import com.oneorigin.originagent.models.ModelDescriptor
+import com.oneorigin.originagent.models.ModelFit
 import com.oneorigin.originagent.util.Ids
 import com.oneorigin.originagent.util.ModelDownloadManager
 import com.oneorigin.originagent.util.JsonCodec
 import com.oneorigin.originagent.util.ThemeMode
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class ChatMessage(
     val id: String,
@@ -35,7 +48,7 @@ data class AgentUiState(
     val messages: List<ChatMessage> = listOf(
         ChatMessage(
             id = "welcome",
-            text = "I'm Origin. Conversation happens only with a real AI model that you download here — tap Get Model and choose one. Your chats stay on this device, and every reply names the model that answered.",
+            text = "I'm Origin. Conversation happens only with a real AI model — download a verified one here or import a compatible GGUF. Your chats stay on this device, and every reply names the model that answered.",
             isUser = false
         )
     ),
@@ -70,50 +83,162 @@ data class AgentUiState(
     val newAdapterKey: String = "",
     val webAccessEnabled: Boolean = true,
     /** Per-model download progress; drives the picker's Download / Ready controls. */
-    val downloadStatuses: Map<String, ModelDownloadManager.Status> = emptyMap()
+    val downloadStatuses: Map<String, ModelDownloadManager.Status> = emptyMap(),
+    /** Conservative, device-derived guidance shown in the model library. */
+    val deviceMemoryLabel: String = "Checking this device…",
+    val modelFitLabels: Map<String, String> = emptyMap(),
+    val recommendedModelIds: List<String> = emptyList(),
+    /** v0.0.4 — the local OpenDuet-style workspace. */
+    val duetTasks: List<DuetTask> = emptyList(),
+    val duetChannels: List<DuetChannel> = emptyList(),
+    val duetPages: List<DuetPage> = emptyList(),
+    val activeChannelId: String? = null
 )
 
 class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private val app = getApplication<OriginAgentApplication>()
+    private val duet = DuetStore.from(app)
     private val _ui = mutableStateOf(AgentUiState())
     val ui: State<AgentUiState> = _ui
 
     private var consentDeferred: CompletableDeferred<Boolean>? = null
 
     private val downloadListener: (String, ModelDownloadManager.Status) -> Unit = { id, status ->
-        _ui.value = _ui.value.copy(
-            downloadStatuses = _ui.value.downloadStatuses + (id to status),
-            modelStatuses = _ui.value.modelStatuses + (
-                id to when (status.state) {
-                    ModelDownloadManager.State.READY -> "Verified · ready to use offline"
-                    ModelDownloadManager.State.DOWNLOADING -> "${status.progress}% of verified weights"
-                    ModelDownloadManager.State.FAILED -> status.message
-                    ModelDownloadManager.State.NOT_DOWNLOADED -> status.message
-                }
-                )
-        )
-        if (status.state == ModelDownloadManager.State.READY && !app.models.hasChatModel()) {
-            app.models.select(id)
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(
+                downloadStatuses = _ui.value.downloadStatuses + (id to status),
+                modelStatuses = _ui.value.modelStatuses + (
+                    id to when (status.state) {
+                        ModelDownloadManager.State.READY -> "Verified · ready to use offline"
+                        ModelDownloadManager.State.DOWNLOADING -> "${status.progress}% of verified weights"
+                        ModelDownloadManager.State.FAILED -> status.message
+                        ModelDownloadManager.State.NOT_DOWNLOADED -> status.message
+                    }
+                    )
+            )
+            if (status.state == ModelDownloadManager.State.READY && !withContext(Dispatchers.IO) { app.models.hasChatModel() }) {
+                withContext(Dispatchers.IO) { app.models.select(id) }
+            }
+            refreshStatus()
         }
-        refreshStatus()
     }
 
     init {
         readSettings()
+        _ui.value = _ui.value.copy(models = app.models.descriptors)
         app.consentRequest = { step -> requestConsent(step) }
         app.modelDownloads.addListener(downloadListener)
         refreshDownloads()
+        refreshDeviceMemory()
         refreshStatus()
+        refreshDuet()
     }
 
-    private fun refreshDownloads() {
-        val statuses = app.models.descriptors.mapNotNull { descriptor ->
-            app.models.downloadStatus(descriptor.id)?.let { descriptor.id to it }
-        }.toMap()
+    /** Reads real device memory; all figures in the UI are explicitly labelled estimates. */
+    private fun readDeviceMemory(): DeviceMemory {
+        val info = ActivityManager.MemoryInfo()
+        runCatching {
+            app.getSystemService(ActivityManager::class.java)?.getMemoryInfo(info)
+        }
+        val mb = 1024L * 1024L
+        return DeviceMemory(
+            totalMb = (info.totalMem / mb).coerceAtLeast(0L),
+            availableMb = (info.availMem / mb).coerceAtLeast(0L)
+        )
+    }
+
+    fun refreshDeviceMemory() = viewModelScope.launch {
+        val device = withContext(Dispatchers.IO) { readDeviceMemory() }
+        val specs = _ui.value.models.mapNotNull { it.downloadSpec }.distinctBy { it.modelId }
+        val label = if (device.totalMb <= 0L) {
+            "Device memory unavailable on this device"
+        } else {
+            "${device.totalMb / 1024} GB total · ${device.availableMb / 1024} GB available (estimate)"
+        }
+        _ui.value = _ui.value.copy(
+            deviceMemoryLabel = label,
+            modelFitLabels = specs.associate { it.modelId to ModelFit.label(it, device) },
+            recommendedModelIds = ModelFit.recommendedOrder(specs, device).take(3).map { it.modelId }
+        )
+    }
+
+    private suspend fun loadDuet() {
+        val tasks = withContext(Dispatchers.IO) { duet.tasks() }
+        val channels = withContext(Dispatchers.IO) { duet.channels(includeArchived = true) }
+        val pages = withContext(Dispatchers.IO) { duet.pages() }
+        _ui.value = _ui.value.copy(duetTasks = tasks, duetChannels = channels, duetPages = pages)
+    }
+
+    fun refreshDuet() = viewModelScope.launch { loadDuet() }
+
+    fun addDuetTask(title: String, channelId: String? = _ui.value.activeChannelId) =
+        viewModelScope.launch {
+            if (title.isBlank()) return@launch
+            withContext(Dispatchers.IO) { duet.addTask(title.trim(), channelId) }
+            loadDuet()
+            _ui.value = _ui.value.copy(notice = "Task added locally.")
+        }
+
+    fun setDuetTaskStatus(id: String, status: DuetTaskStatus) = viewModelScope.launch {
+        withContext(Dispatchers.IO) { duet.updateTask(id, status = status) }
+        loadDuet()
+    }
+
+    fun setDuetTaskChannel(id: String, channelId: String?) = viewModelScope.launch {
+        withContext(Dispatchers.IO) { duet.updateTask(id, channelId = channelId) }
+        loadDuet()
+    }
+
+    fun addDuetChannel(name: String, emoji: String, purpose: String) = viewModelScope.launch {
+        if (name.isBlank()) return@launch
+        val channel = withContext(Dispatchers.IO) {
+            duet.addChannel(name.trim(), emoji.trim().ifBlank { "•" }, purpose = purpose.trim())
+        }
+        _ui.value = _ui.value.copy(activeChannelId = channel.id)
+        loadDuet()
+        _ui.value = _ui.value.copy(notice = "Channel ${channel.name} created.")
+    }
+
+    fun setActiveChannel(id: String?) {
+        _ui.value = _ui.value.copy(activeChannelId = id)
+    }
+
+    fun archiveDuetChannel(id: String, archived: Boolean) = viewModelScope.launch {
+        withContext(Dispatchers.IO) { duet.updateChannel(id, archived = archived) }
+        if (archived && _ui.value.activeChannelId == id) {
+            _ui.value = _ui.value.copy(activeChannelId = null)
+        }
+        loadDuet()
+    }
+
+    fun addDuetPage(topic: String, kind: DuetPageKind) = viewModelScope.launch {
+        val title = topic.trim().ifBlank { kind.label }
+        val content = templateFor(kind, title)
+        withContext(Dispatchers.IO) { duet.addPage(title, kind, content) }
+        loadDuet()
+        _ui.value = _ui.value.copy(notice = "${kind.label} draft created on this device.")
+    }
+
+    fun updateDuetPage(id: String, content: String) = viewModelScope.launch {
+        withContext(Dispatchers.IO) { duet.updatePage(id, content = content) }
+        loadDuet()
+    }
+
+    fun removeDuetPage(id: String) = viewModelScope.launch {
+        withContext(Dispatchers.IO) { duet.removePage(id) }
+        loadDuet()
+    }
+
+    fun refreshDownloads() = viewModelScope.launch {
+        val statuses = withContext(Dispatchers.IO) {
+            app.models.descriptors.mapNotNull { descriptor ->
+                app.models.downloadStatus(descriptor.id)?.let { descriptor.id to it }
+            }.toMap()
+        }
         _ui.value = _ui.value.copy(downloadStatuses = statuses)
     }
 
-    /** One tap: fetch, verify and activate a model — no user-supplied weights. */
+    /** One tap: fetch, verify and activate a suggested GGUF. */
     fun downloadModel(id: String) {
         val descriptor = app.models.descriptor(id) ?: return
         val spec = descriptor.downloadSpec ?: return
@@ -132,6 +257,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deleteWeights(id: String) {
+        if (app.models.isImported(id)) {
+            removeImportedModel(id)
+            return
+        }
         app.models.deleteWeights(id)
         _ui.value = _ui.value.copy(
             modelStatuses = _ui.value.modelStatuses + (id to "Weights removed — tap Get Model to fetch again"),
@@ -141,12 +270,59 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         refreshStatus()
     }
 
+    /** Import a GGUF already on the device; Origin copies it into app-private storage. */
+    fun importGguf(uri: Uri) = viewModelScope.launch {
+        _ui.value = _ui.value.copy(
+            notice = "Copying the GGUF and checking it before it becomes selectable…"
+        )
+        val result = withContext(Dispatchers.IO) { app.models.importGguf(uri) }
+        result.fold(
+            onSuccess = { imported ->
+                val selected = withContext(Dispatchers.IO) { app.models.select(imported.id) }
+                _ui.value = _ui.value.copy(
+                    models = app.models.descriptors,
+                    modelStatuses = _ui.value.modelStatuses + (
+                        imported.id to "Imported · verified copy stored in this app"
+                        ),
+                    notice = if (selected) {
+                        "${imported.displayName} is ready and now answering."
+                    } else {
+                        "${imported.displayName} is stored in Origin — select it in the model library."
+                    }
+                )
+                refreshDownloads()
+                refreshDeviceMemory()
+                refreshStatus()
+            },
+            onFailure = { error ->
+                _ui.value = _ui.value.copy(
+                    notice = error.message ?: "That file could not be imported as a GGUF model."
+                )
+            }
+        )
+    }
+
+    fun removeImportedModel(id: String) {
+        val name = app.models.descriptor(id)?.displayName ?: "Imported model"
+        app.models.removeImported(id)
+        _ui.value = _ui.value.copy(
+            models = app.models.descriptors,
+            modelStatuses = _ui.value.modelStatuses - id,
+            notice = "$name removed from this device."
+        )
+        refreshStatus()
+    }
+
+    fun setNotice(text: String) {
+        _ui.value = _ui.value.copy(notice = text)
+    }
+
     fun send(text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty() || _ui.value.busy) return
         if (!app.models.hasChatModel()) {
             _ui.value = _ui.value.copy(
-                notice = "Get a model first — chatting is only with a real downloaded AI model."
+                notice = "Get a model or import a compatible GGUF first — chatting is only with a real AI model."
             )
             openModelPicker()
             return
@@ -158,7 +334,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 messages = _ui.value.messages + ChatMessage(Ids.next("msg"), trimmed, isUser = true)
             )
             val intent = Intent(Ids.next("intent"), trimmed, IntentSource.USER)
-            val result = app.harness.run(intent) { event -> onEvent(event) }
+            val result = withContext(Dispatchers.IO) {
+                app.harness.run(intent) { event -> onEvent(event) }
+            }
             val label = app.models.descriptor(result.engineId)?.displayName ?: result.engineId
             _ui.value = _ui.value.copy(
                 busy = false,
@@ -224,7 +402,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.value = _ui.value.copy(
             modelStatuses = _ui.value.modelStatuses + (id to "Checking connection…")
         )
-        val result = app.models.checkConnection(id)
+        val result = withContext(Dispatchers.IO) { app.models.checkConnection(id) }
         _ui.value = _ui.value.copy(
             modelStatuses = _ui.value.modelStatuses + (id to result.detail)
         )
@@ -383,16 +561,38 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun refreshStatus() = viewModelScope.launch {
+        val selected = withContext(Dispatchers.IO) { app.models.selectedChat()?.id }
+        val state = withContext(Dispatchers.IO) {
+            StatusSnapshot(
+                engineLabel = app.models.descriptor(selected.orEmpty())?.displayName ?: "No model · Get Model",
+                selectedModelId = selected.orEmpty(),
+                chatReady = selected != null,
+                nativeRuntimeReady = com.oneorigin.originagent.models.LlamaRuntime.available(),
+                nativeLabel = if (app.nativeBridge.isAvailable()) "C/C++ native" else "Kotlin fallback",
+                memoryCount = app.memory.all().size,
+                chainValid = app.ledger.verify()
+            )
+        }
         _ui.value = _ui.value.copy(
-            engineLabel = app.models.selectedChat()?.displayName ?: "No model · Get Model",
-            selectedModelId = app.models.selectedChat()?.id ?: "",
-            chatReady = app.models.hasChatModel(),
-            nativeRuntimeReady = com.oneorigin.originagent.models.LlamaRuntime.available(),
-            nativeLabel = if (app.nativeBridge.isAvailable()) "C/C++ native" else "Kotlin fallback",
-            memoryCount = app.memory.all().size,
-            chainValid = app.ledger.verify()
+            engineLabel = state.engineLabel,
+            selectedModelId = state.selectedModelId,
+            chatReady = state.chatReady,
+            nativeRuntimeReady = state.nativeRuntimeReady,
+            nativeLabel = state.nativeLabel,
+            memoryCount = state.memoryCount,
+            chainValid = state.chainValid
         )
     }
+
+    private data class StatusSnapshot(
+        val engineLabel: String,
+        val selectedModelId: String,
+        val chatReady: Boolean,
+        val nativeRuntimeReady: Boolean,
+        val nativeLabel: String,
+        val memoryCount: Int,
+        val chainValid: Boolean
+    )
 
     fun setTheme(mode: ThemeMode) {
         app.settings.themeMode = mode

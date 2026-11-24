@@ -71,20 +71,25 @@ object ModelCatalog {
         provider = "OneOrigin · verified download",
         providerId = "oneorigin.local",
         kind = ModelKind.LOCAL_NATIVE,
-        description = "${spec.family}. ${spec.summary} Origin downloads, checks the SHA-256 and runs it on-device.",
+        description = buildString {
+            if (spec.badge.isNotBlank()) append("${spec.badge}. ")
+            append("${spec.family}. ${spec.summary} Origin downloads, checks the SHA-256 and runs it on-device.")
+        },
         capabilities = setOf("chat", "offline", "local", "downloadable", "gguf"),
         limitations = "${spec.license}. ${spec.summary}",
         docsUrl = spec.licenseUrl,
         downloadSpec = spec
     )
 
+    /** Smallest verified GGUF: the default everyday suggestion, never a quality claim. */
+    val POCKET = localModel(DownloadableModels.SMOLM2_135M_POCKET)
     val BITNET = localModel(DownloadableModels.BITNET_2B4T)
     val LFM2_5 = localModel(DownloadableModels.LFM2_5_350M)
     val SUB_1B = localModel(DownloadableModels.SUB_1B)
     val QWEN = localModel(DownloadableModels.QWEN_COMPACT)
 
-    /** The four strategic families, in the order the constitution lists them. */
-    val LOCAL_MODELS: List<ModelDescriptor> = listOf(BITNET, LFM2_5, SUB_1B, QWEN)
+    /** Everyday use first; BitNet remains prominent as a verified local 2B option. */
+    val LOCAL_MODELS: List<ModelDescriptor> = listOf(POCKET, BITNET, LFM2_5, SUB_1B, QWEN)
 
     val OPENAI = ModelDescriptor(
         id = "remote.openai",

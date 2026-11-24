@@ -19,6 +19,11 @@
 | v0.0.2 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.2> | `c2d2f1f258fa5936fce07168c35205cb2d3af52a41c4e9bca154f5042bc191b6` |
 | v0.0.1 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.1> | `6e09a39aef75e156115ce58af15aa29a69aab8b2fccc896d890ced1818a58930` |
 
+**Pending v0.0.4 (not published):** the verified local `-PskipNative=true` build is
+`f0e6497cd0e200eeda867b0d7fe14dbfd2c24ab2b8fb95935c3e3119c578ae14` (80 JVM tests, lint green).
+It has not been tagged or uploaded; the release workflow's tagged native build will remain
+authoritative.
+
 From v0.0.3 onward, the release workflow checksums only the APK built for the release tag, so archived local builds cannot be mistaken for published artifacts. The `SHA256SUMS.txt` attached to a GitHub Release is authoritative.
 The local reference APK in `dist/` was built with `-PskipNative=true` (host NDK tools are
 incompatible here), so its hash differs from the CI build, which includes the native layer.

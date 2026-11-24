@@ -11,17 +11,20 @@ Summary: Universal, sovereign, model-agnostic intelligent agent environment
 Description: |
   Origin Agent is a native Android intelligent agent environment that keeps user data
   local and routes consequential actions through an inspectable plan → authorization →
-  verification → provenance pipeline. Chat uses only real AI models: four downloadable,
-  checksum-verified local GGUFs run on-device through llama.cpp, or a user-configured
-  OpenAI-compatible adapter. Rules-based tools never imitate conversation. Calculator,
-  date/time, notes, knowledge search and the trust ledger work offline. No account,
-  telemetry, ads or mandatory cloud are required.
+  verification → provenance pipeline. Chat uses only real AI models: five downloadable,
+  checksum-verified local GGUFs and compatible imported GGUFs run on-device through llama.cpp,
+  or a user-configured OpenAI-compatible adapter that must be explicitly configured and selected.
+  Rules-based
+  tools never imitate conversation. Calculator, date/time, notes, knowledge search, a local
+  task/channel workspace, editable draft pages and the trust ledger work offline. Optional
+  voice dictation uses the platform speech recogniser only after a tap. No account, telemetry,
+  ads or mandatory cloud are required.
 RepoType: git
 Repo: https://github.com/OriginLabs1/OriginAgent.git
 Builds:
-  - versionName: 0.0.3
-    versionCode: 3
-    commit: v0.0.3
+  - versionName: 0.0.4
+    versionCode: 4
+    commit: v0.0.4
     gradle:
       - app
     subdir: app
@@ -30,5 +33,5 @@ Builds:
       - gradle/wrapper/gradle-wrapper.jar
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.0.3
-CurrentVersionCode: 3
+CurrentVersion: 0.0.4
+CurrentVersionCode: 4

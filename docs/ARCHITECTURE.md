@@ -1,4 +1,4 @@
-# Architecture — Origin Agent v0.0.3
+# Architecture — Origin Agent v0.0.4
 
 ## 1. Shape
 
@@ -8,8 +8,8 @@ The UI never talks directly to tools or engines; everything goes through the
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ Aurora UI over Material 3 (Compose)                          │
-│ Origin · Capabilities · Memory · Trust · Settings            │
+│ Satin UI over Material You (Compose)                          │
+│ Chat · Tasks · Make · Channels · Tools · Memory · Trust       │
 └───────────────────────────┬──────────────────────────────────┘
                             │ AgentViewModel (state + intents)
 ┌───────────────────────────▼──────────────────────────────────┐
@@ -49,20 +49,26 @@ for `engine.generate`. This keeps the app useful without AI while making the cha
 
 ### 3.2 Real AI engines
 `InferenceEngine` is the only contract the harness knows. Chat-capable adapters:
-- `LlamaEngine` — the four downloadable GGUF models, executed by the bundled MIT llama.cpp
-  AAR (`LlamaRuntime` serialises one resident model at a time).
+- `LlamaEngine` — the five downloadable GGUF models and compatible imported GGUFs, executed by
+  the bundled MIT llama.cpp AAR (`LlamaRuntime` serialises one resident model at a time).
 - `OpenAiCompatibleEngine` — real `/v1` endpoints the user configures (including local
   Ollama/LM Studio servers), gated by the Web access switch.
 - Future engines must implement the same interface and pass the same availability checks.
 
 `isAvailable()` performs real feature detection: native library load, verified weight file and
-published size. Missing libraries or weights return `GenerationResult.Unavailable` /
-`Failure`; the harness reports a typed error and there is **no rule-based fallback**.
+published size. Built-in web templates are candidates only until the user saves a config; an
+added adapter is available only once added. Missing libraries or weights return
+`GenerationResult.Unavailable` / `Failure`; the harness reports a typed error and there is
+**no rule-based fallback**.
 
 ### 3.2a Verified model installation
-`ModelDownloadManager` streams a GGUF over HTTPS to app-private storage, checks the published
-size and SHA-256, then promotes it and records verification. Failed or cancelled downloads are
-never selectable. No weight file is bundled or accepted from the user.
+`ModelDownloadManager` streams a GGUF over HTTPS to app-private storage, resumes a valid `.part`
+file with a checked `Range` request, retries interrupted transfers with friendly progress, and
+checks the published size and SHA-256 before promoting it. Failed or cancelled downloads are
+never selectable; cancellation never reports a failure and never discards a valid partial.
+No weight file is bundled. A user-owned GGUF may be imported through the document picker:
+`ImportedModelStore` validates the header, hashes it while copying into app-private storage
+and exposes it as a real local engine. Both kinds coexist and switching is a local preference.
 
 ### 3.3 Native C/C++ layer
 `src/main/cpp` contains a dependency-free library for provenance hashing, canonicalization
@@ -76,19 +82,22 @@ fallback, so the APK remains functional even if the native library is absent.
 | Memory | JSONL | `filesDir/origin/memory.jsonl` | Full JSON export |
 | Knowledge | JSONL | bundled assets + user file | Plain text/JSON |
 | Provenance | JSONL hash chain | `filesDir/origin/provenance.jsonl` | Verifiable offline |
-| Model weights | GGUF | `filesDir/models` | Downloaded, SHA-256 verified; not exported |
+| Model weights | GGUF | `filesDir/models`, `filesDir/imported-models` | Downloaded or imported, SHA-256 verified; not exported |
+| Duet workspace | JSONL | `filesDir/duet` | Tasks, channels and local draft pages |
 | Preferences | SharedPreferences | app-private | Included in export |
 
 No records leave the device unless the user explicitly shares an export.
 
 ## 5. UI system
 
-- **Aurora** design system (v0.0.3) over Material 3: obsidian/day canvases, glass cards,
-  gradient conversation turns, monospace micro-labels and a floating navigation dock.
-- Dynamic color on Android 12+ remains user-controlled; Aurora accents keep identity stable.
-- Shared primitives live in `ui/components/Aurora.kt`; screen composition lives in
-  `ui/screens/Screens.kt`; navigation and global dialogs live in `MainActivity.kt`.
-- Motion: ambient light-well drift and mark breathing, both disabled by Reduce motion.
+- **Satin** design system (v0.0.4) over Material You: graphite/paper canvases, quiet cards,
+  status-only colours, short paragraph replies and a floating four-tab dock.
+- Dynamic color on Android 12+ remains user-controlled; Satin status semantics stay stable.
+- New primitives live in `ui/components/DuetKit.kt`; workspace screens live in
+  `ui/screens/DuetScreens.kt`; the Satin model library lives in
+  `ui/screens/ModelLibraryDialog.kt`; legacy secondary dialogs remain in `ui/screens/Screens.kt`;
+  navigation and global dialogs live in `MainActivity.kt`.
+- Motion: the mic orb's spring pulse only while listening; disabled by Reduce motion.
 - Accessibility: semantic labels, verified/attempted distinction, AA-tested contrast for both palettes.
 - Full token and rationale reference: [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
 

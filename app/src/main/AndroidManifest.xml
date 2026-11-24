@@ -4,6 +4,8 @@
     <!-- Core capabilities work fully offline. Network is used only when the user
          explicitly selects a remote model and configures its endpoint. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Voice dictation is opt-in and uses the platform speech recogniser. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:name=".OriginAgentApplication"

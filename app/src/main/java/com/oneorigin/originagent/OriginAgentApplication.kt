@@ -8,6 +8,7 @@ import com.oneorigin.originagent.harness.Verifier
 import com.oneorigin.originagent.memory.KnowledgeBase
 import com.oneorigin.originagent.memory.MemoryStore
 import com.oneorigin.originagent.memory.ProvenanceLedger
+import com.oneorigin.originagent.models.ImportedModelStore
 import com.oneorigin.originagent.models.ModelRegistry
 import com.oneorigin.originagent.tools.CalculatorTool
 import com.oneorigin.originagent.tools.DateTimeTool
@@ -31,7 +32,10 @@ class OriginAgentApplication : Application() {
     val ledger: ProvenanceLedger by lazy { ProvenanceLedger(filesDir) }
     val knowledge: KnowledgeBase by lazy { KnowledgeBase() }
     val modelDownloads: ModelDownloadManager by lazy { ModelDownloadManager(this) }
-    val models: ModelRegistry by lazy { ModelRegistry(settings, remoteModels, modelDownloads) }
+    val importedModels: ImportedModelStore by lazy { ImportedModelStore(this) }
+    val models: ModelRegistry by lazy {
+        ModelRegistry(settings, remoteModels, modelDownloads, importedModels)
+    }
     val nativeBridge: NativeBridge get() = NativeBridge
 
     val tools: ToolRegistry by lazy {

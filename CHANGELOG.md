@@ -6,11 +6,39 @@ constitution's foundational version `0.0.1` until the first usable native releas
 
 ## [Unreleased]
 
+### Added
+- **Satin native workspace (v0.0.4).** A distinct OpenDuet-inspired mobile UI with a quiet
+  neutral palette, one violet accent, four-tab Chat / Tasks / Make / Channels dock, truthful
+  status chips and restrained micro-interactions. The product website (`site/`) is unchanged.
+- Local Duet workspace: tasks with explicit states, channels and editable local draft pages.
+  Defaults are labelled local drafts; no output is attributed to an AI model.
+- Opt-in voice dictation through the platform speech recogniser, with honest unavailable and
+  permission states instead of simulated transcription.
+- Resumable, retrying GGUF downloads driven by a pure, unit-tested `DownloadPlan`.
+- A Satin model library: a 135M SmolLM2 starter model, memory-aware fit labels and ordering,
+  trusted GGUF browsing links, and one-tap access to downloads and imports.
+- Device GGUF import: choose a `.gguf` already on the phone, copy it into app-private storage,
+  validate the GGUF header, hash it, and keep it as a selectable local model. Multiple
+  downloaded and imported models persist and can be switched without losing the conversation.
+- `docs/LOCAL_FIRST_DATA_DECISIONS.md`: why PostgreSQL and a full OpenDuet/OpenBot server are
+  deliberately not part of this offline mobile release.
+
 ### Changed
-- _Nothing yet._
+- Web adapters are genuinely opt-in: built-in templates are candidates until saved/configured;
+  launch and model selection no longer make a remote request.
+- Chat inference, connection checks and local workspace writes run off the main thread.
+- BitNet is documented precisely: bitnet.cpp is upstream research, not an Android SDK; the
+  shipped TQ1_0 weights run through the bundled llama.cpp AAR with no quality claims until the
+  evidence log has real measurements.
+- `versionCode` 4 / `versionName` 0.0.4.
 
 ### Fixed
-- _Nothing yet._
+- Premature EOF and socket failures no longer surface as raw “unexpected end of stream”;
+  partial `.part` files are preserved and resumed, and cancellation is not reported as failure.
+- SHA-256 verification never runs on the UI thread during status refresh.
+- Native model release is serialized with generation so it cannot free a live model.
+- Provenance verification fails closed on malformed or missing ledger lines.
+- Documentation no longer claims a deterministic chat fallback.
 
 ## [0.0.3] - 2026-11-21
 

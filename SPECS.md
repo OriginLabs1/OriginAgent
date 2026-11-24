@@ -23,7 +23,7 @@ A "skill" here is a capability the project must be able to perform, not a market
 | S-08 | Work fully offline | App passes tests with engines disabled and airplane mode |
 | S-09 | Swap inference engines without UI changes | Engine registry + capability negotiation |
 | S-10 | Export all user data | JSON export includes memory, provenance, preferences |
-| S-11 | Present a coherent, accessible Aurora UI | Contrast-tested palettes, truthful model chip, reduced-motion support |
+| S-11 | Present a coherent, accessible Satin UI | Contrast-tested palettes, truthful model chip, reduced-motion support |
 
 ### 1.2 Tool skills (v0.0.1)
 
@@ -64,17 +64,18 @@ graceful Kotlin fallback when the library is unavailable.
 Exit: `bash ./gradlew assembleRelease` green on ARM64 and x86-64 toolchains; tests pass.
 
 ### Phase 3 — Native UI
-Deliverables: five-screen Material 3 Expressive app, dynamic color, motion,
-accessibility, phone/tablet layouts.
+Deliverables: a four-tab OpenDuet-style workspace (Chat, Tasks, Make, Channels) plus
+Capabilities, Memory, Trust and Settings, with Material You color, motion and accessibility.
 Exit: manual smoke flow on a 360 dp viewport and a tablet viewport; zero console/runtime errors.
 
 ### Phase 4 — Model adapters and evidence
-Deliverables: `InferenceEngine` adapters for four verified GGUF models through bundled
-`llama.cpp` plus OpenAI-compatible web adapters; `docs/MODEL_REGISTRY.md`; reproducible
-benchmark harness.
-Exit: no user-supplied weights; local weights install with published SHA-256 verification;
-chat is impossible until a real model is available; unavailable engines report typed errors
-with no rule-based fallback; benchmarks cite commands.
+Deliverables: `InferenceEngine` adapters for five verified GGUF models plus user-owned GGUF
+imports through bundled `llama.cpp`, memory-aware suggestions, trusted browsing links and
+OpenAI-compatible web adapters; `docs/MODEL_REGISTRY.md`; reproducible benchmark harness.
+Exit: suggested weights install with published SHA-256 verification; imported files are
+validated and copied into app-private storage; chat is impossible until a real model is
+available; unavailable engines report typed errors with no rule-based fallback; benchmarks
+cite commands.
 
 ### Phase 5 — Distribution
 Deliverables: minified, debug-signed release APK attached to a GitHub Release, F-Droid metadata,
@@ -205,7 +206,8 @@ interface InferenceEngine {
 ```
 
 Availability must be truthful. An unavailable engine returns a typed `EngineUnavailable`
-result; the harness falls back to `LocalDeterministicEngine`.
+result. Chat never falls back to `LocalDeterministicEngine`; the deterministic engine runs
+tools only. Remote adapters require explicit configuration and selection before any request.
 
 ### 5.3 Tool
 

@@ -1,74 +1,74 @@
 package com.oneorigin.originagent
 
+import android.Manifest
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.oneorigin.originagent.domain.MemoryEntry
 import com.oneorigin.originagent.domain.ProvenanceRecord
-import com.oneorigin.originagent.ui.AgentUiState
+import com.oneorigin.originagent.duet.DuetTaskStatus
+import com.oneorigin.originagent.models.ModelSources
 import com.oneorigin.originagent.ui.AgentViewModel
-import com.oneorigin.originagent.ui.components.AuroraMark
+import com.oneorigin.originagent.ui.components.DuetCanvas
+import com.oneorigin.originagent.ui.components.DuetDock
+import com.oneorigin.originagent.ui.components.DuetTab
 import com.oneorigin.originagent.ui.screens.AddAdapterDialog
 import com.oneorigin.originagent.ui.screens.CapabilitiesScreen
+import com.oneorigin.originagent.ui.screens.ChannelsScreen
+import com.oneorigin.originagent.ui.screens.ChatScreen
+import com.oneorigin.originagent.ui.screens.MakeScreen
 import com.oneorigin.originagent.ui.screens.MemoryScreen
-import com.oneorigin.originagent.ui.screens.ModelPickerDialog
-import com.oneorigin.originagent.ui.screens.OriginScreen
+import com.oneorigin.originagent.ui.screens.ModelLibraryDialog
 import com.oneorigin.originagent.ui.screens.RemoteConfigDialog
+import com.oneorigin.originagent.ui.screens.SetupDialog
 import com.oneorigin.originagent.ui.screens.SettingsScreen
+import com.oneorigin.originagent.ui.screens.TasksScreen
 import com.oneorigin.originagent.ui.screens.TrustScreen
-import com.oneorigin.originagent.ui.theme.Aurora
+import com.oneorigin.originagent.ui.screens.VoiceSheet
 import com.oneorigin.originagent.ui.theme.OriginTheme
+import com.oneorigin.originagent.ui.voice.VoiceDictation
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -94,29 +94,49 @@ class OriginViewModelFactory(private val app: Application) : ViewModelProvider.F
     override fun <T : ViewModel> create(modelClass: Class<T>): T = AgentViewModel(app) as T
 }
 
-private data class Destination(
-    val route: String,
-    val label: String,
-    val icon: ImageVector
-)
+private sealed interface Screen {
+    data class Main(val tab: DuetTab) : Screen
+    data object Tools : Screen
+    data object Memory : Screen
+    data object Trust : Screen
+    data object Settings : Screen
+}
 
 @Composable
 private fun OriginAgentApp(vm: AgentViewModel) {
-    val navController = rememberNavController()
-    val backStack by navController.currentBackStackEntryAsState()
-    val current = backStack?.destination
-    val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val ui by vm.ui
+    val snackbar = remember { SnackbarHostState() }
+    var screen by remember { mutableStateOf<Screen>(Screen.Main(DuetTab.CHAT)) }
+    var menuOpen by remember { mutableStateOf(false) }
+    var setupOpen by remember { mutableStateOf(false) }
+    var voiceRequested by remember { mutableStateOf(false) }
 
-    val destinations = listOf(
-        Destination("origin", "Origin", Icons.AutoMirrored.Filled.Chat),
-        Destination("capabilities", "Tools", Icons.Filled.AutoAwesome),
-        Destination("memory", "Memory", Icons.Filled.Storage),
-        Destination("trust", "Trust", Icons.Filled.VerifiedUser),
-        Destination("settings", "Settings", Icons.Filled.Settings)
-    )
+    val voice = remember { VoiceDictation(context) }
+    val voiceState by voice.state.collectAsStateWithLifecycle()
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) voice.start() else voiceRequested = false
+    }
+    val importLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) vm.importGguf(uri) }
+    val openBrowser: (String) -> Unit = { url ->
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        try {
+            context.startActivity(Intent.createChooser(intent, "Browse GGUF sources"))
+        } catch (_: Exception) {
+            vm.setNotice("No browser is available on this device.")
+        }
+    }
+    DisposableEffect(voice) { onDispose { voice.release() } }
+    LaunchedEffect(voiceState) {
+        if (voiceState is VoiceDictation.State.WaitingForPermission && voiceRequested) {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            voiceRequested = false
+        }
+    }
 
     val memories by produceState(initialValue = emptyList<MemoryEntry>(), key1 = ui.memoryCount) {
         value = vm.memoryEntries()
@@ -124,115 +144,99 @@ private fun OriginAgentApp(vm: AgentViewModel) {
     val records by produceState(initialValue = emptyList<ProvenanceRecord>(), key1 = ui.lastEvent) {
         value = vm.chainRecords()
     }
+    LaunchedEffect(ui.notice) { ui.notice?.let { snackbar.showSnackbar(it) } }
 
-    LaunchedEffect(ui.notice) {
-        ui.notice?.let { snackbar.showSnackbar(it) }
+    val openVoice = {
+        voiceRequested = true
+        voice.start()
     }
 
     Scaffold(
-        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)),
-                shadowElevation = 0.dp,
-                tonalElevation = 0.dp
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 7.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    destinations.forEach { destination ->
-                        val selected = current?.hierarchy?.any { it.route == destination.route } == true
-                        val accent = if (selected) Aurora.Violet else MaterialTheme.colorScheme.onSurfaceVariant
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(
-                                    if (selected) Brush.linearGradient(
-                                        listOf(
-                                            Aurora.Violet.copy(alpha = 0.28f),
-                                            Aurora.Cyan.copy(alpha = 0.16f)
-                                        )
-                                    ) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
-                                )
-                                .clickable {
-                                    navController.navigate(destination.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                                .padding(horizontal = 11.dp, vertical = 7.dp)
-                        ) {
-                            Icon(destination.icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
-                            androidx.compose.material3.Text(
-                                destination.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = accent
-                            )
-                        }
-                    }
-                }
+            if (screen is Screen.Main) {
+                DuetDock(
+                    current = (screen as Screen.Main).tab,
+                    waiting = ui.duetTasks.count {
+                        it.status == DuetTaskStatus.NEEDS_INPUT || it.status == DuetTaskStatus.READY_FOR_REVIEW
+                    },
+                    onSelect = { screen = Screen.Main(it) },
+                    onMenu = { menuOpen = true }
+                )
             }
         }
     ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = "origin",
-            modifier = Modifier.padding(padding)
-        ) {
-            composable("origin") {
-                OriginScreen(
-                    ui = ui,
-                    onSend = vm::send,
-                    onOpenModelPicker = vm::openModelPicker,
-                    onGetModel = vm::getModel
-                )
-            }
-            composable("capabilities") {
-                CapabilitiesScreen(
-                    tools = vm.capabilities(),
-                    models = ui.models.filter { it.chatCapable },
-                    activeModelId = ui.selectedModelId,
-                    availability = vm::isModelAvailable,
-                    onSelectModel = { vm.selectModel(it) },
-                    onOpenModelPicker = vm::openModelPicker
-                )
-            }
-            composable("memory") {
-                MemoryScreen(
-                    entries = memories,
-                    onExport = {
-                        scope.launch {
-                            val json = vm.exportJson()
-                            val share = Intent(Intent.ACTION_SEND).apply {
-                                type = "application/json"
-                                putExtra(Intent.EXTRA_TEXT, json)
+        DuetCanvas(modifier = Modifier.padding(padding)) {
+            when (val current = screen) {
+                is Screen.Main -> when (current.tab) {
+                    DuetTab.CHAT -> ChatScreen(
+                        ui = ui,
+                        onSend = vm::send,
+                        onGetModel = vm::getModel,
+                        onOpenModelPicker = vm::openModelPicker,
+                        onVoice = openVoice,
+                        onOpenTasks = { screen = Screen.Main(DuetTab.TASKS) },
+                        onOpenSetup = { setupOpen = true }
+                    )
+                    DuetTab.TASKS -> TasksScreen(
+                        ui = ui,
+                        onAdd = { title, channel -> vm.addDuetTask(title, channel) },
+                        onStatus = { id, status -> vm.setDuetTaskStatus(id, status) },
+                        onChannel = { id, channel -> vm.setDuetTaskChannel(id, channel) },
+                        onOpenChannels = { screen = Screen.Main(DuetTab.CHANNELS) }
+                    )
+                    DuetTab.MAKE -> MakeScreen(
+                        ui = ui,
+                        onAddPage = { topic, kind -> vm.addDuetPage(topic, kind) },
+                        onSavePage = { id, content -> vm.updateDuetPage(id, content) },
+                        onDeletePage = vm::removeDuetPage
+                    )
+                    DuetTab.CHANNELS -> ChannelsScreen(
+                        ui = ui,
+                        onAdd = { name, emoji, purpose -> vm.addDuetChannel(name, emoji, purpose) },
+                        onSelect = vm::setActiveChannel,
+                        onArchive = { id, archived -> vm.archiveDuetChannel(id, archived) }
+                    )
+                }
+                Screen.Tools -> ExtraScreen("Capabilities", { screen = Screen.Main(DuetTab.CHAT) }) {
+                    CapabilitiesScreen(
+                        tools = vm.capabilities(),
+                        models = ui.models.filter { it.chatCapable },
+                        activeModelId = ui.selectedModelId,
+                        availability = vm::isModelAvailable,
+                        onSelectModel = { vm.selectModel(it) },
+                        onOpenModelPicker = vm::openModelPicker
+                    )
+                }
+                Screen.Memory -> ExtraScreen("Memory", { screen = Screen.Main(DuetTab.CHAT) }) {
+                    MemoryScreen(
+                        entries = memories,
+                        onExport = {
+                            vm.viewModelScope.launch {
+                                val json = vm.exportJson()
+                                val share = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/json"
+                                    putExtra(Intent.EXTRA_TEXT, json)
+                                }
+                                runCatching { context.startActivity(Intent.createChooser(share, "Export Origin data")) }
                             }
-                            runCatching { context.startActivity(Intent.createChooser(share, "Export Origin data")) }
-                        }
-                    },
-                    onClear = vm::clearMemory
-                )
-            }
-            composable("trust") { TrustScreen(records = records, chainValid = ui.chainValid) }
-            composable("settings") {
-                SettingsScreen(
-                    ui = ui,
-                    onTheme = vm::setTheme,
-                    onDynamic = vm::setDynamicColor,
-                    onMotion = vm::setReducedMotion,
-                    onLowRisk = vm::setAutoApproveLowRisk,
-                    onWebAccess = vm::setWebAccess
-                )
+                        },
+                        onClear = vm::clearMemory
+                    )
+                }
+                Screen.Trust -> ExtraScreen("Trust", { screen = Screen.Main(DuetTab.CHAT) }) {
+                    TrustScreen(records = records, chainValid = ui.chainValid)
+                }
+                Screen.Settings -> ExtraScreen("Settings", { screen = Screen.Main(DuetTab.CHAT) }) {
+                    SettingsScreen(
+                        ui = ui,
+                        onTheme = vm::setTheme,
+                        onDynamic = vm::setDynamicColor,
+                        onMotion = vm::setReducedMotion,
+                        onLowRisk = vm::setAutoApproveLowRisk,
+                        onWebAccess = vm::setWebAccess
+                    )
+                }
             }
         }
     }
@@ -240,36 +244,34 @@ private fun OriginAgentApp(vm: AgentViewModel) {
     ui.pendingConsent?.let { detail ->
         AlertDialog(
             onDismissRequest = { vm.respondConsent(false) },
-            shape = RoundedCornerShape(28.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
             title = {
                 Column {
-                    androidx.compose.material3.Text("AUTHORIZATION", style = MaterialTheme.typography.labelSmall, color = Aurora.Mint)
-                    androidx.compose.material3.Text("Consent required", style = MaterialTheme.typography.headlineMedium)
+                    Text("AUTHORIZATION", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    Text("Consent required", style = MaterialTheme.typography.titleLarge)
                 }
             },
-            text = { androidx.compose.material3.Text(detail) },
-            confirmButton = { TextButton(onClick = { vm.respondConsent(true) }) { androidx.compose.material3.Text("Approve") } },
-            dismissButton = { TextButton(onClick = { vm.respondConsent(false) }) { androidx.compose.material3.Text("Decline") } }
+            text = { Text(detail) },
+            confirmButton = { TextButton(onClick = { vm.respondConsent(true) }) { Text("Allow once") } },
+            dismissButton = { TextButton(onClick = { vm.respondConsent(false) }) { Text("Refuse") } }
         )
     }
 
     if (ui.modelPickerOpen) {
-        ModelPickerDialog(
-            models = ui.models.filter { it.chatCapable },
-            selectedId = ui.selectedModelId,
-            statuses = ui.modelStatuses,
-            downloadStatuses = ui.downloadStatuses,
-            nativeRuntimeReady = ui.nativeRuntimeReady,
+        ModelLibraryDialog(
+            ui = ui,
             availability = vm::isModelAvailable,
             onSelect = { vm.selectModel(it) },
-            onCheck = { vm.checkModel(it) },
-            onConfigure = { vm.openModelConfig(it) },
-            onClear = { vm.clearModelConfig(it) },
             onDownload = vm::downloadModel,
             onCancelDownload = vm::cancelDownload,
             onDeleteWeights = vm::deleteWeights,
+            onImportGguf = { importLauncher.launch(arrayOf("*/*")) },
+            onBrowse = { openBrowser(ModelSources.HUGGING_FACE_GGUF_SEARCH_URL) },
+            onOpenUrl = openBrowser,
             onAddAdapter = vm::openAddAdapter,
+            onCheck = { vm.checkModel(it) },
+            onConfigure = { vm.openModelConfig(it) },
+            onClear = { vm.clearModelConfig(it) },
             onRemoveAdapter = { vm.removeAdapter(it) },
             onDismiss = vm::closeModelPicker
         )
@@ -305,5 +307,81 @@ private fun OriginAgentApp(vm: AgentViewModel) {
             onSave = vm::saveModelConfig,
             onDismiss = vm::closeModelConfig
         )
+    }
+
+    if (setupOpen) {
+        SetupDialog(
+            ui = ui,
+            onCheck = { vm.refreshStatus(); vm.refreshDownloads() },
+            onGetModel = { setupOpen = false; vm.openModelPicker() },
+            onDismiss = { setupOpen = false }
+        )
+    }
+
+    if (menuOpen) {
+        AlertDialog(
+            onDismissRequest = { menuOpen = false },
+            title = { Text("Origin", style = MaterialTheme.typography.titleLarge) },
+            text = {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    MenuRow("Setup") { setupOpen = true; menuOpen = false }
+                    MenuRow("Get a model") { vm.openModelPicker(); menuOpen = false }
+                    MenuRow("Import a .gguf file") {
+                        menuOpen = false
+                        importLauncher.launch(arrayOf("*/*"))
+                    }
+                    MenuRow("Browse GGUF sources") {
+                        menuOpen = false
+                        openBrowser(ModelSources.HUGGING_FACE_GGUF_SEARCH_URL)
+                    }
+                    MenuRow("Capabilities") { screen = Screen.Tools; menuOpen = false }
+                    MenuRow("Memory") { screen = Screen.Memory; menuOpen = false }
+                    MenuRow("Trust") { screen = Screen.Trust; menuOpen = false }
+                    MenuRow("Settings") { screen = Screen.Settings; menuOpen = false }
+                }
+            },
+            confirmButton = { TextButton(onClick = { menuOpen = false }) { Text("Close") } }
+        )
+    }
+
+    if (voiceState !is VoiceDictation.State.Idle) {
+        VoiceSheet(
+            state = voiceState,
+            onSend = { text -> vm.send(text); voice.release() },
+            onRetry = {
+                voiceRequested = true
+                voice.start()
+            },
+            onDismiss = { voice.release() }
+        )
+    }
+}
+
+@Composable
+private fun MenuRow(label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+@Composable
+private fun ExtraScreen(title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+            Text(title, style = MaterialTheme.typography.titleLarge)
+        }
+        Box(Modifier.weight(1f)) { content() }
     }
 }

@@ -24,7 +24,17 @@ data class DownloadableModelSpec(
     /** Conversation context window used when the model is loaded. */
     val contextSize: Int = 2048,
     /** Short, honest description shown in the picker. */
-    val summary: String
+    val summary: String,
+    /** True for the default everyday suggestion, not a claim about absolute quality. */
+    val recommended: Boolean = false,
+    /** Short display tag such as "Recommended" or "Largest download". */
+    val badge: String = "",
+    /** Device RAM below which this artifact is not a sensible suggestion. */
+    val minimumRamMb: Long = 0L,
+    /** Conservative estimated runtime footprint; never a measured or guaranteed figure. */
+    val estimatedRamMb: Long = 0L,
+    /** Trusted project page for the artifact; defaults to its download URL. */
+    val sourceUrl: String = url
 )
 
 object DownloadableModels {
@@ -47,7 +57,12 @@ object DownloadableModels {
         licenseUrl = "https://huggingface.co/microsoft/bitnet-b1.58-2B-4T/blob/main/LICENSE",
         attribution = "Microsoft BitNet b1.58 2B4T; llama.cpp-compatible GGUF conversion by ihtesham0345",
         contextSize = 2048,
-        summary = "Ternary 2B model. Largest download; needs roughly 1.3 GB of free RAM."
+        summary = "Ternary 2B model. Largest download; needs roughly 1.3 GB of free RAM.",
+        recommended = false,
+        badge = "Verified local · largest download",
+        minimumRamMb = 4096L,
+        estimatedRamMb = 1353L,
+        sourceUrl = "https://huggingface.co/microsoft/bitnet-b1.58-2B-4T"
     )
 
     /** Liquid AI LFM2.5 350M — compact edge model in a standard Q4_K_M GGUF. */
@@ -64,7 +79,12 @@ object DownloadableModels {
         licenseUrl = "https://huggingface.co/LiquidAI/LFM2.5-350M/blob/main/LICENSE",
         attribution = "Liquid AI LFM2.5-350M",
         contextSize = 2048,
-        summary = "Efficient compact model. Fast on 4 GB devices; about 220 MB download."
+        summary = "Efficient compact model. Fast on 4 GB devices; about 220 MB download.",
+        recommended = false,
+        badge = "Compact edge model",
+        minimumRamMb = 2048L,
+        estimatedRamMb = 433L,
+        sourceUrl = "https://huggingface.co/LiquidAI/LFM2.5-350M-GGUF"
     )
 
     /** Optimized sub-1B baseline: SmolLM2 360M instruct, Q4_K_M. */
@@ -81,7 +101,12 @@ object DownloadableModels {
         licenseUrl = "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct/blob/main/LICENSE",
         attribution = "Hugging Face TB SmolLM2-360M-Instruct",
         contextSize = 4096,
-        summary = "Everyday responsiveness on 4 GB phones; about 260 MB download."
+        summary = "Everyday responsiveness on 4 GB phones; about 260 MB download.",
+        recommended = false,
+        badge = "Everyday sub-1B",
+        minimumRamMb = 3072L,
+        estimatedRamMb = 573L,
+        sourceUrl = "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct"
     )
 
     /** Qwen-class compact: Qwen2.5 0.5B instruct, Q4_K_M. */
@@ -98,12 +123,44 @@ object DownloadableModels {
         licenseUrl = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/blob/main/LICENSE",
         attribution = "Qwen Team Qwen2.5-0.5B-Instruct",
         contextSize = 2048,
-        summary = "Broad-capability baseline; about 470 MB download."
+        summary = "Broad-capability baseline; about 470 MB download.",
+        recommended = false,
+        badge = "Broader capability",
+        minimumRamMb = 4096L,
+        estimatedRamMb = 708L,
+        sourceUrl = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF"
     )
 
-    /** Ordered as the constitution lists the strategic families. */
+    /**
+     * Verified smallest and fastest GGUF in the catalog: SmolLM2 135M Instruct Q4_K_M from
+     * lmstudio-community/SmolLM2-135M-Instruct-GGUF. Size and SHA-256 are pinned from the
+     * Hugging Face tree API LFS metadata. It is deliberately the default everyday suggestion;
+     * it is less capable than the larger models, and this is stated in the summary.
+     */
+    val SMOLM2_135M_POCKET = DownloadableModelSpec(
+        modelId = "local.smollm2.135m",
+        label = "SmolLM2 135M · Pocket",
+        family = "Optimized sub-1B",
+        fileName = "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+        url = "https://huggingface.co/lmstudio-community/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q4_K_M.gguf",
+        sha256 = "bda484992f9655d22504b14e57985257fa6a86937c61f957cf99c10a3bcae169",
+        sizeBytes = 105_454_144L,
+        format = "gguf/q4_k_m",
+        license = "Apache-2.0",
+        licenseUrl = "https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct/blob/main/LICENSE",
+        attribution = "Hugging Face TB SmolLM2-135M-Instruct",
+        contextSize = 2048,
+        summary = "Smallest and fastest verified local model. About 100 MB; quick replies, but noticeably less capable than the larger models.",
+        recommended = true,
+        badge = "Recommended · smallest & fastest",
+        minimumRamMb = 2048L,
+        estimatedRamMb = 304L,
+        sourceUrl = "https://huggingface.co/lmstudio-community/SmolLM2-135M-Instruct-GGUF"
+    )
+
+    /** Everyday order first; BitNet stays prominent as the verified flagship local model. */
     val ALL: List<DownloadableModelSpec> = listOf(
-        BITNET_2B4T, LFM2_5_350M, SUB_1B, QWEN_COMPACT
+        SMOLM2_135M_POCKET, BITNET_2B4T, LFM2_5_350M, SUB_1B, QWEN_COMPACT
     )
 
     fun forModel(modelId: String): DownloadableModelSpec? = ALL.firstOrNull { it.modelId == modelId }

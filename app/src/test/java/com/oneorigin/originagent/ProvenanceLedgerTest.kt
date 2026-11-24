@@ -27,6 +27,16 @@ class ProvenanceLedgerTest {
     }
 
     @Test
+    fun `malformed ledger line fails closed`() = runBlocking {
+        val dir = File(System.getProperty("java.io.tmpdir"), "origin-test-malformed-${System.nanoTime()}")
+        val ledger = ProvenanceLedger(dir)
+        ledger.append("intent.received", "test", "intent_1", "hello")
+        val file = File(File(dir, "origin"), "provenance.jsonl")
+        file.appendText("{not valid json}\n")
+        assertFalse(ledger.verify())
+    }
+
+    @Test
     fun `hash chain payload verification detects reorder`() {
         val first = Hash.chainPayload("a", "b", "c", "d", 1L, "0000000000000000")
         val second = Hash.chainPayload("a", "b", "c", "d", 2L, Hash.fnv1a64(first))

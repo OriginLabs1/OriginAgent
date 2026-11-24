@@ -51,14 +51,17 @@ class ProvenanceLedger(baseDir: File) {
     suspend fun all(): List<ProvenanceRecord> = mutex.withLock { readLocked() }
 
     suspend fun verify(): Boolean = mutex.withLock {
+        val lines = file.takeIf { it.exists() }?.readLines().orEmpty()
         val records = readLocked()
-        val serialized = file.takeIf { it.exists() }?.readLines().orEmpty().mapNotNull { line ->
+        val serialized = lines.mapNotNull { line ->
             val map = JsonCodec.decode(line)
             val payload = map["payload"] ?: return@mapNotNull null
             val hash = map["hash"] ?: return@mapNotNull null
             Hash.serialize(payload, hash)
         }
-        if (serialized.isEmpty()) return@withLock true
+        if (lines.isEmpty()) return@withLock true
+        // A malformed or deleted line is damage, not an empty ledger. Never fail open.
+        if (serialized.size != lines.size || records.size != lines.size) return@withLock false
         Hash.verifySerializedChain(serialized) && NativeBridge.structuralChainCheck(serialized) &&
             records.zip(serialized).all { (record, line) -> line.endsWith(record.hash) }
     }

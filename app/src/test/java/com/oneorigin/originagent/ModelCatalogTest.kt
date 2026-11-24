@@ -44,7 +44,7 @@ class ModelCatalogTest {
 
     @Test
     fun everyLocalChatModelIsRealDownloadableGguf() {
-        assertEquals(4, ModelCatalog.LOCAL_MODELS.size)
+        assertEquals(5, ModelCatalog.LOCAL_MODELS.size)
         ModelCatalog.LOCAL_MODELS.forEach { model ->
             assertEquals(ModelKind.LOCAL_NATIVE, model.kind)
             assertTrue(model.chatCapable)

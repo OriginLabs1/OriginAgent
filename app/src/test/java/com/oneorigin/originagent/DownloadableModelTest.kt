@@ -16,8 +16,8 @@ import org.junit.Test
 class DownloadableModelTest {
 
     @Test
-    fun allFourStrategicFamiliesAreDownloadable() {
-        assertEquals(4, DownloadableModels.ALL.size)
+    fun allStrategicFamiliesAreDownloadable() {
+        assertEquals(5, DownloadableModels.ALL.size)
         val families = DownloadableModels.ALL.map { it.family }
         assertTrue(families.contains("BitNet ternary"))
         assertTrue(families.contains("LFM2.5-class"))
@@ -66,6 +66,7 @@ class DownloadableModelTest {
 
     @Test
     fun pinnedChecksumsMatchThePublishedArtifacts() {
+        assertSha(DownloadableModels.SMOLM2_135M_POCKET, "bda484992f9655d22504b14e57985257fa6a86937c61f957cf99c10a3bcae169")
         assertSha(DownloadableModels.BITNET_2B4T, "db8852edfaa08476ab8476052c7777990cf73df16f2618604115a2c954e06f3a")
         assertSha(DownloadableModels.LFM2_5_350M, "7e6f72643caafc9a68256686638c4d7916f2cec76d1df478d4c3ddcd95a6aed4")
         assertSha(DownloadableModels.SUB_1B, "e55c2a5df7f8f6eed1a843ff709fa8008dbce65d82e57c5c06dec5ee8d060415")

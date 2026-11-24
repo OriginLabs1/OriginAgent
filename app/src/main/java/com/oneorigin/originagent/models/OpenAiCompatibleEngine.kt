@@ -39,7 +39,13 @@ class OpenAiCompatibleEngine(
         descriptor.modelName
     )
 
-    override fun isAvailable(): Boolean = webAccess() && config().isReady
+    /**
+     * Built-in templates are candidates only: they become available once the user has saved
+     * settings for this id. Added adapters are explicit by definition. No network request is
+     * made here — this is a pure preference check used by the model picker on launch.
+     */
+    override fun isAvailable(): Boolean =
+        webAccess() && config().isReady && configStore.isExplicitlyConfigured(id)
 
     override suspend fun generate(request: GenerationRequest): GenerationResult =
         withContext(Dispatchers.IO) {
@@ -50,10 +56,10 @@ class OpenAiCompatibleEngine(
                     "Web access is switched off in Settings. Enable it to use this model."
                 )
             }
-            if (!config.isReady) {
+            if (!config.isReady || !configStore.isExplicitlyConfigured(id)) {
                 return@withContext GenerationResult.Unavailable(
                     id,
-                    "Configure a valid endpoint and model name in the model picker first."
+                    "Configure this web adapter in the model picker first."
                 )
             }
 
@@ -117,8 +123,8 @@ class OpenAiCompatibleEngine(
         if (!webAccess()) {
             return@withContext ConnectionCheck(false, "Web access is switched off in Settings.")
         }
-        if (!config.isReady) {
-            return@withContext ConnectionCheck(false, "Endpoint and model name are not configured yet.")
+        if (!config.isReady || !configStore.isExplicitlyConfigured(id)) {
+            return@withContext ConnectionCheck(false, "Configure this web adapter in the model picker first.")
         }
         var connection: HttpURLConnection? = null
         try {

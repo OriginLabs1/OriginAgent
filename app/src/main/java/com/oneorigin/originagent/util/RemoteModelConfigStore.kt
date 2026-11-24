@@ -2,6 +2,7 @@ package com.oneorigin.originagent.util
 
 import android.content.Context
 import androidx.core.content.edit
+import java.util.UUID
 
 /** Connection settings for remote models. Kept local and never included in exports verbatim. */
 data class RemoteModelConfig(
@@ -63,6 +64,14 @@ class RemoteModelConfigStore(context: Context) {
         .map { it.removeSuffix(".endpoint") }
         .toSet()
 
+    /**
+     * True only when the user actually saved settings for this adapter. Descriptor defaults
+     * (the built-in endpoint templates) never count as explicit configuration: no web
+     * request may happen just because a template exists.
+     */
+    fun isExplicitlyConfigured(id: String): Boolean =
+        id.isNotBlank() && (prefs.contains("$id.endpoint") || adapters().any { it.id == id })
+
     /** Adapters added through "Add adapter" — not limited to the built-in list. */
     fun adapters(): List<StoredAdapter> {
         val ids = prefs.getString("adapter.ids", "").orEmpty()
@@ -82,8 +91,21 @@ class RemoteModelConfigStore(context: Context) {
         }
     }
 
+    /** UUID-based ids stay unique across devices, restarts and rapid consecutive taps. */
+    private fun nextAdapterId(): String {
+        val used = prefs.getString("adapter.ids", "").orEmpty()
+            .split(',')
+            .map { it.trim() }
+            .toSet()
+        var id: String
+        do {
+            id = "adapter.${UUID.randomUUID()}"
+        } while (id in used)
+        return id
+    }
+
     fun addAdapter(label: String, endpoint: String, modelName: String, apiKey: String): StoredAdapter {
-        val id = "adapter.${System.currentTimeMillis()}"
+        val id = nextAdapterId()
         prefs.edit {
             putString("$id.label", label.trim())
             putString("$id.endpoint", endpoint.trim())

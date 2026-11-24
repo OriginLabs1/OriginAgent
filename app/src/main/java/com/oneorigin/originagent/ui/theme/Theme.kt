@@ -17,75 +17,77 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.oneorigin.originagent.util.ThemeMode
 
-/** Larger, softer geometry is a signature of the Aurora design language. */
+/** Satin geometry: restrained cards, pill controls, generous tap targets. */
 val OriginShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
     small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp),
-    extraLarge = RoundedCornerShape(36.dp)
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(28.dp)
 )
 
+/** Type-led, OpenDuet-like scale; no bundled or remote font dependency. */
 val OriginTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 46.sp,
-        lineHeight = 50.sp,
-        letterSpacing = (-1.8).sp
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 36.sp,
+        lineHeight = 42.sp,
+        letterSpacing = (-1.2).sp
     ),
     displayMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 38.sp,
-        lineHeight = 42.sp,
-        letterSpacing = (-1.4).sp
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 30.sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-0.9).sp
     ),
     displaySmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
-        lineHeight = 37.sp,
-        letterSpacing = (-1).sp
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 26.sp,
+        lineHeight = 32.sp,
+        letterSpacing = (-0.7).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 25.sp,
-        lineHeight = 31.sp,
-        letterSpacing = (-0.5).sp
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = (-0.4).sp
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp,
-        lineHeight = 26.sp,
-        letterSpacing = (-0.3).sp
+        fontSize = 19.sp,
+        lineHeight = 25.sp,
+        letterSpacing = (-0.2).sp
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 22.sp
     ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
-        fontSize = 16.sp,
-        lineHeight = 25.sp
+        fontSize = 17.sp,
+        lineHeight = 24.sp,
+        letterSpacing = (-0.2).sp
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
-        fontSize = 14.sp,
+        fontSize = 15.sp,
         lineHeight = 21.sp
     ),
     bodySmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        fontSize = 13.sp,
         lineHeight = 18.sp
     ),
     labelLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp
     ),
     labelMedium = TextStyle(
@@ -98,11 +100,11 @@ val OriginTypography = Typography(
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 15.sp,
-        letterSpacing = 0.5.sp
+        letterSpacing = 0.6.sp
     )
 )
 
-/** Drives ambient Aurora motion; respects the shared Reduce motion preference. */
+/** Drives restrained micro-interactions; respects the shared Reduce motion preference. */
 val LocalAuroraMotion = compositionLocalOf { true }
 
 @Composable
