@@ -15,14 +15,16 @@
 
 | Version | Release | Published APK SHA-256 |
 |---|---|---|
+| v0.0.4 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.4> (Satin workspace + five verified GGUF models and import) | published CI build: `b706e4c14170df1313d612f58436300285d5171eadb6b88a7a3c45755d7a9bf7`. The release's `SHA256SUMS.txt` is authoritative for downloads. |
 | v0.0.3 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.3> (Aurora UI + four verified GGUF models) | published CI build: `ce0238e94c59423e9d45d344353c927da573c10707653d1f59915cd4504f665c`. The local reference APK in `dist/` is `c8c2cd3a029725fbfeaca4aa0226a779598ff931a17622f182f3d4a885b3afdd`; the release's `SHA256SUMS.txt` is authoritative for downloads. |
 | v0.0.2 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.2> | `c2d2f1f258fa5936fce07168c35205cb2d3af52a41c4e9bca154f5042bc191b6` |
 | v0.0.1 | <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.1> | `6e09a39aef75e156115ce58af15aa29a69aab8b2fccc896d890ced1818a58930` |
 
-**Pending v0.0.4 (not published):** the verified local `-PskipNative=true` build is
-`f0e6497cd0e200eeda867b0d7fe14dbfd2c24ab2b8fb95935c3e3119c578ae14` (80 JVM tests, lint green).
-It has not been tagged or uploaded; the release workflow's tagged native build will remain
-authoritative.
+**v0.0.4 is published.** The tagged native CI build is authoritative:
+`b706e4c14170df1313d612f58436300285d5171eadb6b88a7a3c45755d7a9bf7`. The local
+`-PskipNative=true` verification build was
+`f0e6497cd0e200eeda867b0d7fe14dbfd2c24ab2b8fb95935c3e3119c578ae14` (80 JVM tests, lint green);
+it is only a local check and is not the release artifact.
 
 From v0.0.3 onward, the release workflow checksums only the APK built for the release tag, so archived local builds cannot be mistaken for published artifacts. The `SHA256SUMS.txt` attached to a GitHub Release is authoritative.
 The local reference APK in `dist/` was built with `-PskipNative=true` (host NDK tools are
@@ -33,8 +35,8 @@ Always verify downloaded APKs against the checksum file from the release:
 sha256sum -c SHA256SUMS.txt
 ```
 
-> **Publishing status:** `v0.0.1`, `v0.0.2` and `v0.0.3` are pushed to GitHub, with `v0.0.3`
-> tagged for the release workflow. The GitHub Pages site is at
+> **Publishing status:** `v0.0.1`, `v0.0.2`, `v0.0.3` and `v0.0.4` are pushed to GitHub, with
+> `v0.0.4` tagged for the release workflow. The GitHub Pages site is at
 > <https://originlabs1.github.io/OriginAgent/>; the Cloudflare Pages project `origin-agent-kit`
 > serves <https://origin-agent-kit.coreconcept1.net> and
 > <https://origin-agent-kit.pages.dev>. GitHub Actions builds, releases and Pages deploys run
@@ -53,6 +55,22 @@ sha256sum -c SHA256SUMS.txt
 4. Tag `vX.Y.Z`; `.github/workflows/release.yml` builds and attaches the APK + checksums.
 5. Update F-Droid metadata with version, hash and commit.
 6. State in notes: local-first, no telemetry, web access opt-in, not on Google Play.
+
+## v0.0.4 publication record
+
+```bash
+# Published from OriginLabs1/OriginAgent
+git push origin main
+git push origin v0.0.4
+# .github/workflows/release.yml built the native APK and attached it with SHA256SUMS.txt
+# .github/workflows/pages.yml deploys site/ to GitHub Pages on every push to main
+
+# Website — Cloudflare Pages (same site/ directory):
+npx wrangler pages deploy site --project-name origin-agent-kit --branch main
+# origin-agent-kit.coreconcept1.net is attached in the Cloudflare dashboard.
+```
+
+Release: <https://github.com/OriginLabs1/OriginAgent/releases/tag/v0.0.4>
 
 ## v0.0.3 publication record
 
